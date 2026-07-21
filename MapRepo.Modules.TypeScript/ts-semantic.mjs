@@ -6,7 +6,9 @@
 // re-bound — only the requested changed files are actually re-analyzed.
 //
 // Usage: node ts-semantic.mjs --root <repoRoot> --ts <path/to/typescript.js> --repo <repositoryId>
-// Request  (one JSON object per line): { "files": ["/abs/path/a.ts", ...] } or { "files": null } for a full pass.
+// Request  (one JSON object per line): { "files": ["/abs/path/a.ts", ...] | null, "excludePatterns": ["verify-build", ...] }
+//   files: null means a full pass. excludePatterns are extra case-insensitive substrings (beyond
+//   the built-in EXCLUDED set below) to skip — mirrors MapRepo.Core.PathExclusions on the C# side.
 // Response (one JSON object per line):
 //   full:        { "symbols": [...], "relationships": [...], "diagnostics": [...] }
 //   incremental: { "filePaths": [...], "symbols": [...], "relationships": [...], "diagnostics": [...] }
@@ -27,18 +29,25 @@ const ts = require(path.resolve(args.ts));
 const MODULE_ID = 'typescript-syntax'; // stable module id: semantic and syntax engines own the same rows
 const hash = v => createHash('sha256').update(v, 'utf8').digest('hex').slice(0, 24);
 const rel = p => path.relative(root, p).replace(/\\/g, '/');
-const EXCLUDED = new Set(['node_modules', 'dist', 'build', 'coverage', '.git', 'bin', 'obj', 'packages']);
+const EXCLUDED = new Set(['node_modules', 'dist', 'build', 'coverage', '.git', '.tmp', 'bin', 'obj']);
+// "packages" and "Data" are deliberately NOT in this set: they are common names for legitimate,
+// hand-authored source folders in a user's own repository (mirrors MapRepo.Core.PathExclusions).
+let extraExcludePatterns = []; // refreshed per request from request.excludePatterns
 
 function underRoot(p) {
   const r = path.relative(root, p);
-  return r && !r.startsWith('..') && !path.isAbsolute(r) && !r.split(/[\\/]/).some(seg => EXCLUDED.has(seg));
+  if (!r || r.startsWith('..') || path.isAbsolute(r)) return false;
+  if (r.split(/[\\/]/).some(seg => EXCLUDED.has(seg))) return false;
+  const lower = r.toLowerCase();
+  return !extraExcludePatterns.some(pattern => pattern && lower.includes(pattern.toLowerCase()));
 }
 
 function collectFiles(dir, out) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isDirectory()) { if (!EXCLUDED.has(entry.name)) collectFiles(path.join(dir, entry.name), out); }
-    else if (/\.(ts|tsx|js|jsx|mjs|cjs)$/i.test(entry.name) && !entry.name.endsWith('.d.ts'))
-      out.push(path.join(dir, entry.name));
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) { if (underRoot(full)) collectFiles(full, out); }
+    else if (/\.(ts|tsx|js|jsx|mjs|cjs)$/i.test(entry.name) && !entry.name.endsWith('.d.ts') && underRoot(full))
+      out.push(full);
   }
 }
 
@@ -51,7 +60,7 @@ function resolveRootNames() {
   if (configPath && underRoot(configPath)) {
     const parsed = ts.getParsedCommandLineOfConfigFile(configPath, { noEmit: true, skipLibCheck: true },
       { ...ts.sys, onUnRecoverableConfigFileDiagnostic: d => diagnostics.push(ts.flattenDiagnosticMessageText(d.messageText, ' ')) });
-    fileNames = parsed ? parsed.fileNames : [];
+    fileNames = (parsed ? parsed.fileNames : []).filter(underRoot);
     options = parsed ? { ...parsed.options, noEmit: true, skipLibCheck: true } : {};
     diagnostics.push(`tsconfig: ${rel(configPath)}`);
   }
@@ -278,6 +287,7 @@ function rebuildProgram(changedAbsolutePaths) {
 }
 
 function handleRequest(request) {
+  extraExcludePatterns = Array.isArray(request?.excludePatterns) ? request.excludePatterns : [];
   const requestedFiles = Array.isArray(request?.files) ? request.files.map(f => path.resolve(f)) : null;
   const configDiagnostics = rebuildProgram(requestedFiles ?? []);
   const allSourceFiles = program.getSourceFiles().filter(sf => !sf.isDeclarationFile && underRoot(sf.fileName));

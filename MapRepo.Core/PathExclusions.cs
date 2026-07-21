@@ -14,6 +14,15 @@ public static class PathExclusions
         ".git", ".tmp", "node_modules", "dist", "build", "coverage", "bin", "obj"
     };
 
-    public static bool IsExcluded(string path) =>
-        path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Any(ExcludedSegments.Contains);
+    public static bool IsExcluded(string path) => IsExcluded(path, null);
+
+    /// <summary>Same as <see cref="IsExcluded(string)"/>, plus a per-repository list of extra
+    /// substrings (case-insensitive, matched anywhere in the path) for project-specific folders
+    /// the universal list can't know about — e.g. a custom build-verification scratch directory.</summary>
+    public static bool IsExcluded(string path, IReadOnlyList<string>? extraPatterns)
+    {
+        if (path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Any(ExcludedSegments.Contains)) return true;
+        if (extraPatterns is not { Count: > 0 }) return false;
+        return extraPatterns.Any(pattern => !string.IsNullOrWhiteSpace(pattern) && path.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+    }
 }

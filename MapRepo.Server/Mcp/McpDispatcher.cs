@@ -77,15 +77,20 @@ public sealed class McpDispatcher
         string? Optional(string name) => args.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.String ? element.GetString() : null;
         int OptionalInt(string name, int value) => args.TryGetProperty(name, out var element) && element.TryGetInt32(out var result) ? result : value;
         bool OptionalBool(string name, bool value) => args.TryGetProperty(name, out var element) && element.ValueKind is JsonValueKind.True or JsonValueKind.False ? element.GetBoolean() : value;
+        string[]? StringArray(string name) => args.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Array
+            ? element.EnumerateArray().Select(x => x.GetString()!).ToArray() : null;
         switch (tool)
         {
             case "open_repository":
                 var id = Optional("id");
                 var root = Required("rootPath");
                 var solution = Optional("solutionPath");
-                var modules = args.TryGetProperty("enabledModules", out var modulesValue) && modulesValue.ValueKind == JsonValueKind.Array
-                    ? modulesValue.EnumerateArray().Select(x => x.GetString()!).ToArray() : null;
-                return await _manager.OpenAsync(new RepositoryDefinition(id ?? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)), root, solution, modules, OptionalBool("includeTextualEvidence", false), Optional("tsEngine")), OptionalBool("reindex", false), ct);
+                var modules = StringArray("enabledModules");
+                var excludedPaths = StringArray("excludedPaths");
+                return await _manager.OpenAsync(new RepositoryDefinition(id ?? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)), root, solution, modules, OptionalBool("includeTextualEvidence", false), Optional("tsEngine"), excludedPaths), OptionalBool("reindex", false), ct);
+            case "exclude_path":
+                var (updatedDefinition, removed) = await _manager.ExcludePathAsync(Required("repositoryId"), Required("path"), ct);
+                return new { updatedDefinition.Id, updatedDefinition.ExcludedPaths, symbolsRemoved = removed };
             case "batch":
                 if (!args.TryGetProperty("calls", out var callsValue) || callsValue.ValueKind != JsonValueKind.Array)
                     throw new InvalidOperationException("batch requires a calls array");

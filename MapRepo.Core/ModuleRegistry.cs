@@ -39,7 +39,20 @@ public sealed class ModuleRegistry
     public IReadOnlyList<IRepositoryLanguageModule> Resolve(RepositoryDefinition repository)
     {
         if (repository.EnabledModules is { Count: > 0 })
-            return repository.EnabledModules.Where(_modules.ContainsKey).Select(id => _modules[id]).ToArray();
+        {
+            var resolved = repository.EnabledModules.Where(_modules.ContainsKey).Select(id => _modules[id]).ToArray();
+            if (resolved.Length == 0)
+            {
+                // A filter that matches nothing (e.g. "CSharp" instead of the real id
+                // "csharp-roslyn") used to resolve to zero modules and index silently forever —
+                // the repository sat at 0 symbols with no clue why. Fail loudly instead; this
+                // surfaces as "Last index failed: ..." in repository_status.
+                throw new InvalidOperationException(
+                    $"enabledModules [{string.Join(", ", repository.EnabledModules)}] matched no registered module. " +
+                    $"Available module ids: {string.Join(", ", _modules.Keys)}");
+            }
+            return resolved;
+        }
         return Modules.ToArray();
     }
 }

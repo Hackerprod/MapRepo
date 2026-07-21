@@ -41,12 +41,15 @@ Follow this escalation order; each step is strictly cheaper than the alternative
 ## Registering repositories
 
 ```
-open_repository { rootPath, id?, solutionPath?, enabledModules?, includeTextualEvidence?, reindex? }
+open_repository { rootPath, id?, solutionPath?, enabledModules?, includeTextualEvidence?, tsEngine?, excludedPaths?, reindex? }
 ```
 
 - Registration is persistent: the server restores every repo (watcher included) after a restart, reusing the stored index — do not reindex on session start.
 - The file watcher applies incremental reindexing on save (~300 ms per changed C# file). Assume the index is fresh.
 - `close_repository` stops the watcher but keeps data; `remove_repository` with `deleteData: true` deletes the repo's own database directory.
+- **`enabledModules` must use real module ids** — `csharp-roslyn` and `typescript-syntax` (check `GET /api/modules` if unsure). A filter like `["CSharp", "TypeScript"]` matches nothing and used to index silently forever at 0 symbols with no explanation; it now fails loudly and the reason shows up in `repository_status`'s diagnostics ("enabledModules [...] matched no registered module"). If a repo you registered sits at 0 symbols, check diagnostics before assuming the source has no code.
+- **Search results polluted by scratch/generated folders** (a `.tmp` build-verification directory, a project-specific output folder) that the built-in exclusion list (`.git`, `.tmp`, `node_modules`, `dist`, `build`, `coverage`, `bin`, `obj`) doesn't cover: call `exclude_path { repositoryId, path }` with a substring of the offending path. It purges already-indexed rows matching that substring immediately (typically well under a second) and persists the pattern so future indexing skips it too — no reindex needed.
+- If a tool you expect (e.g. one added after you last connected) doesn't show up in `tools/list`, your MCP client likely cached the tool list from a previous session — reconnect/restart the client rather than assuming the server regressed.
 
 ## If the server is down
 

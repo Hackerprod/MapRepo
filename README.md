@@ -88,6 +88,7 @@ Streamable HTTP, legacy SSE (`/sse` + `/message`) and plain JSON-RPC POST are al
 | `reindex_repository` | Force a full rebuild. |
 | `close_repository` | Stop the watcher, release memory; data and registration kept. |
 | `remove_repository` | Unregister; `deleteData` also removes the repository's database directory. |
+| `exclude_path` | Add a path substring to a repository's exclude list and purge already-indexed rows matching it immediately — no reindex needed. For scratch/generated folders (`.tmp`, project-specific build-verification directories) that keep polluting search results. |
 | `repo_overview` | Cached orientation map: counts by kind/language/project, edge kinds, top files, hub symbols. |
 | `search_symbols` | Name/path search with `kind` / `pathContains` filters and exact source evidence. |
 | `get_symbol` | One symbol with incoming/outgoing edges and neighbor records. |
@@ -131,7 +132,11 @@ Every module emits the same intermediate representation; the session manager mer
 
 ### Watcher behavior
 
-Ignores `.git`, `bin`, `obj`, `node_modules`, `dist`, `build`, `coverage`; debounces 750 ms; handles create/change/rename/delete. C# changes take the incremental path (new files trigger one full module run that re-caches the workspace). String-literal mining (`textual-evidence`) is off by default — it inflated indexes ~30% with noise; enable per repository only when you need to search embedded protocol strings.
+Ignores `.git`, `.tmp`, `bin`, `obj`, `node_modules`, `dist`, `build`, `coverage` — one list (`MapRepo.Core.PathExclusions`) shared by the watcher and every language module, including the Node-based TypeScript semantic engine. Debounces 750 ms; handles create/change/rename/delete. C# changes take the incremental path (new files trigger one full module run that re-caches the workspace). String-literal mining (`textual-evidence`) is off by default — it inflated indexes ~30% with noise; enable per repository only when you need to search embedded protocol strings.
+
+Project-specific scratch/generated folders that aren't in the universal list (a custom build-verification directory, for example) can be added per repository with `excludedPaths` on `open_repository`, or retroactively with the `exclude_path` tool — the latter purges already-indexed rows immediately, no reindex required.
+
+`enabledModules` on `open_repository` must match a real module id (`csharp-roslyn`, `typescript-syntax` — see `GET /api/modules`); a filter that matches nothing fails loudly (surfaced via `repository_status`) instead of silently indexing zero symbols forever.
 
 ### TypeScript engine resolution
 

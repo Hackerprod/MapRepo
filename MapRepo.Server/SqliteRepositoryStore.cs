@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging;
 using MapRepo.Core;
 
 namespace MapRepo.Server;
@@ -18,10 +19,13 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
     // backfill migration only ever matters for a database created before FTS existed.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> _ftsBackfilled = new(StringComparer.OrdinalIgnoreCase);
 
-    public SqliteRepositoryStore(IHostEnvironment environment)
+    private readonly ILogger<SqliteRepositoryStore> _logger;
+
+    public SqliteRepositoryStore(IHostEnvironment environment, ILogger<SqliteRepositoryStore> logger)
     {
         _root = Path.Combine(environment.ContentRootPath, "data-v4");
         Directory.CreateDirectory(_root);
+        _logger = logger;
     }
 
     public string RootDirectory => _root;
@@ -404,8 +408,82 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         _ftsBackfilled.TryRemove(repositoryId, out _);
         SqliteConnection.ClearAllPools();
         var directory = DirectoryFor(repositoryId);
-        if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        if (Directory.Exists(directory)) DeleteBestEffort(directory);
         return Task.CompletedTask;
+    }
+
+    /// <summary>Deletes as much of a directory tree as the OS currently allows. A leftover WAL or
+    /// journal file held open by an antivirus scan or a not-yet-released handle must not turn
+    /// "unregister this repository" into a 500 — the repo is already gone from the catalog by the
+    /// time this runs; any file it can't remove now is harmless orphaned disk usage.</summary>
+    private void DeleteBestEffort(string directory)
+    {
+        foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+        {
+            try { File.Delete(file); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { _logger.LogWarning(ex, "Could not delete {File} while removing a repository's data; it will be left behind", file); }
+        }
+        try { Directory.Delete(directory, recursive: true); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        { _logger.LogWarning(ex, "Could not fully remove {Directory}; some files are still in use", directory); }
+    }
+
+    public async Task<int> PurgePathAsync(string repositoryId, string pathPattern, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await OpenAsync(repositoryId, cancellationToken);
+        await using var transaction = (SqliteTransaction)await connection.BeginTransactionAsync(cancellationToken);
+        var escaped = EscapeLikePattern(pathPattern);
+
+        int removed;
+        await using (var count = connection.CreateCommand())
+        {
+            count.Transaction = transaction;
+            count.CommandText = "SELECT count(*) FROM symbols WHERE lower(file_path) LIKE '%'||lower($pattern)||'%' ESCAPE '\\'";
+            Add(count, ("$pattern", escaped));
+            removed = Convert.ToInt32(await count.ExecuteScalarAsync(cancellationToken));
+        }
+
+        if (removed > 0)
+        {
+            // Edges recorded at a matching path, or pointing at a symbol that is about to be
+            // removed, must go too — otherwise they'd dangle (target/source no longer resolvable).
+            await using (var command = connection.CreateCommand())
+            {
+                command.Transaction = transaction;
+                command.CommandText = """
+                    DELETE FROM relationships WHERE lower(file_path) LIKE '%'||lower($pattern)||'%' ESCAPE '\'
+                        OR source_id IN (SELECT id FROM symbols WHERE lower(file_path) LIKE '%'||lower($pattern)||'%' ESCAPE '\')
+                        OR target_id IN (SELECT id FROM symbols WHERE lower(file_path) LIKE '%'||lower($pattern)||'%' ESCAPE '\')
+                    """;
+                Add(command, ("$pattern", escaped));
+                await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+            await using (var command = connection.CreateCommand())
+            {
+                command.Transaction = transaction;
+                command.CommandText = "DELETE FROM symbols_fts5 WHERE lower(file_path) LIKE '%'||lower($pattern)||'%' ESCAPE '\\'";
+                Add(command, ("$pattern", escaped));
+                await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+            await using (var command = connection.CreateCommand())
+            {
+                command.Transaction = transaction;
+                command.CommandText = "DELETE FROM symbols WHERE lower(file_path) LIKE '%'||lower($pattern)||'%' ESCAPE '\\'";
+                Add(command, ("$pattern", escaped));
+                await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+            await using (var command = connection.CreateCommand())
+            {
+                command.Transaction = transaction;
+                command.CommandText = "UPDATE meta SET generation=$generation, indexed_at=$indexed WHERE repository_id=$repo";
+                Add(command, ("$repo", repositoryId), ("$generation", DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmssfff")), ("$indexed", DateTimeOffset.UtcNow.ToString("O")));
+                await command.ExecuteNonQueryAsync(cancellationToken);
+            }
+        }
+        await transaction.CommitAsync(cancellationToken);
+        _overviewCache.TryRemove(repositoryId, out _);
+        return removed;
     }
 
     /// <summary>Turns free text into a safe FTS5 prefix query ("Execute Frame" → "\"Execute\"* \"Frame\"*"); null when no usable tokens.</summary>

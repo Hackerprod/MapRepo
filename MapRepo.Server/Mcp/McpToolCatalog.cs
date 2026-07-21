@@ -18,12 +18,17 @@ public static class McpToolCatalog
             ArrayProperty("enabledModules", "Optional module filter such as csharp-roslyn or typescript-syntax.", "string"),
             BooleanProperty("reindex", "Force a full reindex even when the stored index is populated."),
             BooleanProperty("includeTextualEvidence", "Also index identifier-like words found in string literals (default false; adds noise, ~30% more rows)."),
-            StringProperty("tsEngine", "TypeScript analysis engine: auto (default; semantic when Node+typescript are available), semantic, or syntax.")
+            StringProperty("tsEngine", "TypeScript analysis engine: auto (default; semantic when Node+typescript are available), semantic, or syntax."),
+            ArrayProperty("excludedPaths", "Extra path substrings (case-insensitive) to skip during indexing and watching, beyond the built-in .git/node_modules/bin/obj/dist/build/coverage list — e.g. a project-specific build-verification scratch folder.", "string")
         ], ["rootPath"])),
         new("list_repositories", "List every registered repository with its index status. Call this first to discover repositoryId values.", Schema([], [])),
         new("repository_status", "Return index generation, counts, diagnostics and watcher state", RepoSchema()),
         new("reindex_repository", "Force a full reindex of a registered repository", RepoSchema()),
         new("close_repository", "Stop the watcher and release the in-memory session. Data and registration are kept.", RepoSchema()),
+        new("exclude_path", "Add a path substring to a repository's exclude list (on top of the built-in .git/node_modules/bin/obj/dist/build/coverage list) and force a full reindex so previously indexed symbols from that path are purged. Use for project-specific scratch/generated folders that keep polluting search results.", Schema([
+            StringProperty("repositoryId", "Repository id."),
+            StringProperty("path", "Case-insensitive substring to match anywhere in a file's path, e.g. \"verify-build\" or \"scripts/generated\".")
+        ], ["repositoryId", "path"])),
         new("remove_repository", "Unregister a repository; optionally delete its database", Schema([
             StringProperty("repositoryId", "Repository id."),
             BooleanProperty("deleteData", "Also delete the per-repository database directory.")

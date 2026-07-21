@@ -44,7 +44,7 @@ public static class TsSemanticEngine
         var daemon = GetOrStartDaemon(request, diagnostics);
         if (daemon is null) return null;
 
-        var response = await daemon.RequestAsync(new { files = (string[]?)null }, TimeSpan.FromMinutes(5), request.CancellationToken);
+        var response = await daemon.RequestAsync(new { files = (string[]?)null, excludePatterns = request.Repository.ExcludedPaths }, TimeSpan.FromMinutes(5), request.CancellationToken);
         if (response is null)
         {
             diagnostics.Add("ts-semantic: full analysis timed out or the daemon exited; it will restart on the next run");
@@ -70,7 +70,7 @@ public static class TsSemanticEngine
         if (!Daemons.TryGetValue(request.Repository.Id, out var daemon) || !daemon.IsAlive) return null;
 
         var absolutePaths = request.ChangedPaths.Select(Path.GetFullPath).ToArray();
-        var response = await daemon.RequestAsync(new { files = absolutePaths }, TimeSpan.FromSeconds(90), request.CancellationToken);
+        var response = await daemon.RequestAsync(new { files = absolutePaths, excludePatterns = request.Repository.ExcludedPaths }, TimeSpan.FromSeconds(90), request.CancellationToken);
         if (response is null)
         {
             diagnostics.Add("ts-semantic: incremental request timed out or the daemon exited; falling back to a full run");

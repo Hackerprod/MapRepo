@@ -37,7 +37,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
         var relationships = new List<RelationshipRecord>();
         var seenSymbols = new HashSet<string>(StringComparer.Ordinal);
         var seenRelationships = new HashSet<string>(StringComparer.Ordinal);
-        if (!Directory.EnumerateFiles(request.Repository.RootPath, "*.cs", SearchOption.AllDirectories).Any(path => !Excluded(path)))
+        if (!Directory.EnumerateFiles(request.Repository.RootPath, "*.cs", SearchOption.AllDirectories).Any(path => !Excluded(path, request.Repository.ExcludedPaths)))
             return new AnalysisSnapshot(request.Repository.Id, CreateGeneration(request.Repository), [], [], [], DateTimeOffset.UtcNow);
         var solutionPath = ResolveSolution(request.Repository);
 
@@ -63,7 +63,8 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
                 request.CancellationToken.ThrowIfCancellationRequested();
                 var compilation = await project.GetCompilationAsync(request.CancellationToken);
                 if (compilation is null) continue;
-                foreach (var document in project.Documents.Where(d => d.FilePath?.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) == true))
+                foreach (var document in project.Documents.Where(d => d.FilePath?.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) == true
+                    && !Excluded(d.FilePath, request.Repository.ExcludedPaths)))
                 {
                     try
                     {
@@ -106,7 +107,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
     /// workspace or the change set contains files unknown to the solution (new files).</summary>
     public async Task<FileAnalysisDelta?> AnalyzeFilesAsync(AnalysisRequest request)
     {
-        var changed = request.ChangedPaths.Where(CanAnalyze).Where(path => !Excluded(path)).ToArray();
+        var changed = request.ChangedPaths.Where(CanAnalyze).Where(path => !Excluded(path, request.Repository.ExcludedPaths)).ToArray();
         if (changed.Length == 0) return new FileAnalysisDelta([], [], [], []);
         if (!_workspaces.TryGetValue(request.Repository.Id, out var state)) return null;
 
@@ -178,7 +179,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
             .Where(path => path.EndsWith(".sln", StringComparison.OrdinalIgnoreCase)
                 || path.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase)
                 || path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
-            .Where(path => !Excluded(path))
+            .Where(path => !Excluded(path, repository.ExcludedPaths))
             .Select(path => new { Path = path, Score = ProjectScore(root, path) })
             .OrderByDescending(item => item.Score)
             .ThenBy(item => item.Path.Length)
@@ -344,7 +345,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
         diagnostics.Add("Roslyn could not load the solution; configure a valid .sln/.csproj and MSBuild SDK");
         var scopeRoot = solutionPath is not null && solutionPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase)
             ? Path.GetDirectoryName(solutionPath)! : solutionPath is not null ? Path.GetDirectoryName(solutionPath)! : request.Repository.RootPath;
-        var files = Directory.EnumerateFiles(scopeRoot, "*.cs", SearchOption.AllDirectories).Where(path => !Excluded(path));
+        var files = Directory.EnumerateFiles(scopeRoot, "*.cs", SearchOption.AllDirectories).Where(path => !Excluded(path, request.Repository.ExcludedPaths));
         foreach (var path in files)
         {
             request.CancellationToken.ThrowIfCancellationRequested();
@@ -411,7 +412,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
         return true;
     }
 
-    private static bool Excluded(string path) => PathExclusions.IsExcluded(path);
+    private static bool Excluded(string path, IReadOnlyList<string>? extra = null) => PathExclusions.IsExcluded(path, extra);
     private static string SymbolId(ISymbol symbol, string file) => Hash($"{file}|{symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
     private static string CreateGeneration(RepositoryDefinition repository) => Hash($"{repository.Id}|{DateTimeOffset.UtcNow:yyyyMMddHHmm}")[..16];
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant()[..24];

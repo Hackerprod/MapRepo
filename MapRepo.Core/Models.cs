@@ -6,7 +6,11 @@ public sealed record RepositoryDefinition(
     string? SolutionPath = null,
     IReadOnlyList<string>? EnabledModules = null,
     bool IncludeTextualEvidence = false,
-    string? TsEngine = null);
+    string? TsEngine = null,
+    /// <summary>Extra path substrings (case-insensitive) to skip during indexing and watching, on
+    /// top of the built-in PathExclusions list — e.g. a project-specific build-verification
+    /// scratch folder like "verify-build" that isn't one of the universal names.</summary>
+    IReadOnlyList<string>? ExcludedPaths = null);
 
 public sealed record ModuleDescriptor(
     string Id,
@@ -156,6 +160,11 @@ public interface IRepositoryStore
     Task<IReadOnlyList<FileEntry>> FilesAsync(string repositoryId, string? contains, int limit, CancellationToken cancellationToken = default);
     Task<SymbolDetail?> SymbolAsync(string repositoryId, string symbolId, int limit, CancellationToken cancellationToken = default);
     Task DeleteAsync(string repositoryId, CancellationToken cancellationToken = default);
+    /// <summary>Removes every symbol/relationship whose file path contains <paramref name="pathPattern"/>
+    /// (case-insensitive), across all modules, without re-running any analyzer. Returns the number
+    /// of symbols removed. Used to retroactively apply a new exclude pattern to an already-indexed
+    /// repository — cheap and immediate, unlike a full reindex.</summary>
+    Task<int> PurgePathAsync(string repositoryId, string pathPattern, CancellationToken cancellationToken = default);
 }
 
 public sealed record RepositoryStatus(

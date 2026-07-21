@@ -47,6 +47,11 @@ public sealed class RepositorySessionManager : IAsyncDisposable
         var normalized = definition with { RootPath = root, SolutionPath = string.IsNullOrWhiteSpace(definition.SolutionPath) ? null : Path.GetFullPath(definition.SolutionPath) };
         var session = _sessions.GetOrAdd(normalized.Id, _ => new RepositorySession(normalized, _registry, _store,
             _loggerFactory.CreateLogger($"MapRepo.Server.RepositorySession[{normalized.Id}]")));
+        // GetOrAdd's factory only runs once: re-opening an already-live repository with changed
+        // settings (enabledModules, tsEngine, excludedPaths, ...) must still update the running
+        // session, or the change silently only reaches catalog.json (and would need a server
+        // restart to actually take effect).
+        session.UpdateDefinition(normalized);
         _catalog.Upsert(normalized);
         session.StartWatcher();
         await session.EnsureInitialIndexStartedAsync(reindex, cancellationToken);
@@ -62,9 +67,20 @@ public sealed class RepositorySessionManager : IAsyncDisposable
         var summaries = new List<RepositorySummary>();
         foreach (var definition in _catalog.All())
         {
-            var status = _sessions.TryGetValue(definition.Id, out var session)
-                ? await session.StatusAsync(cancellationToken)
-                : await _store.StatusAsync(definition.Id, cancellationToken);
+            RepositoryStatus status;
+            try
+            {
+                status = _sessions.TryGetValue(definition.Id, out var session)
+                    ? await session.StatusAsync(cancellationToken)
+                    : await _store.StatusAsync(definition.Id, cancellationToken);
+            }
+            catch (SqliteException ex)
+            {
+                // One repository's damaged database must not take down the whole list — every
+                // other repository is still perfectly queryable. Surface the failure as a diagnostic.
+                _logger.LogWarning(ex, "Status check failed for repository {RepositoryId}", definition.Id);
+                status = new RepositoryStatus(definition.Id, null, 0, 0, null, false, false, [$"Status check failed: {ex.Message}"]);
+            }
             summaries.Add(new RepositorySummary(definition, status));
         }
         return summaries;
@@ -96,6 +112,22 @@ public sealed class RepositorySessionManager : IAsyncDisposable
         _sessions.TryGetValue(id, out var session) ? session.Definition
         : _catalog.All().FirstOrDefault(d => string.Equals(d.Id, id, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>Adds a path pattern to an already-registered repository's exclude list and purges
+    /// any already-indexed rows that match it — no reindex needed. Future watcher/analyzer runs
+    /// (incremental or full) also respect the pattern immediately: the live session's definition
+    /// is updated in place, and the pattern rides along on every request to the semantic engines.</summary>
+    public async Task<(RepositoryDefinition Definition, int Removed)> ExcludePathAsync(string id, string pattern, CancellationToken cancellationToken = default)
+    {
+        var definition = Definition(id) ?? throw new KeyNotFoundException($"Repository '{id}' is not registered");
+        var merged = (definition.ExcludedPaths ?? Array.Empty<string>())
+            .Append(pattern).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        var updated = definition with { ExcludedPaths = merged };
+        _catalog.Upsert(updated);
+        if (_sessions.TryGetValue(id, out var session)) session.UpdateDefinition(updated);
+        var removed = await _store.PurgePathAsync(id, pattern, cancellationToken);
+        return (updated, removed);
+    }
+
     /// <summary>Reads an exact line range from a file inside the repository root. Never leaves the root.</summary>
     public async Task<SourceSlice> SourceAsync(string id, string relativePath, int startLine, int endLine, CancellationToken cancellationToken = default)
     {
@@ -126,7 +158,7 @@ public sealed class RepositorySession : IAsyncDisposable
     private static readonly string[] SourceExtensions =
         [".cs", ".csproj", ".sln", ".slnx", ".props", ".targets", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"];
 
-    private readonly RepositoryDefinition _definition;
+    private RepositoryDefinition _definition;
     private readonly ModuleRegistry _registry;
     private readonly IRepositoryStore _store;
     private readonly ILogger _logger;
@@ -155,6 +187,11 @@ public sealed class RepositorySession : IAsyncDisposable
     }
 
     public RepositoryDefinition Definition => _definition;
+
+    /// <summary>Swaps the live definition (e.g. a new ExcludedPaths entry) so the watcher and any
+    /// future index run use it immediately, without recreating the session.</summary>
+    public void UpdateDefinition(RepositoryDefinition definition) => _definition = definition;
+
     public bool WatcherActive => Volatile.Read(ref _watcherActive) == 1;
     public bool IsIndexing => Volatile.Read(ref _indexing) == 1;
 
@@ -353,7 +390,7 @@ public sealed class RepositorySession : IAsyncDisposable
 
     private bool IsInteresting(string path)
     {
-        if (PathExclusions.IsExcluded(path)) return false;
+        if (PathExclusions.IsExcluded(path, _definition.ExcludedPaths)) return false;
         return SourceExtensions.Any(extension => path.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
     }
 
