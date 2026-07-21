@@ -49,6 +49,18 @@ var mcpSessions = new ConcurrentDictionary<string, Channel<string>>(StringCompar
 app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "map-repo-server" }));
 app.MapGet("/api/modules", (RepositorySessionManager manager) => Results.Ok(manager.Modules.Select(m => m.Descriptor)));
 
+app.MapGet("/api/engines", () => Results.Ok(new
+{
+    roslyn = new { available = true, engine = "MSBuildWorkspace" },
+    typescript = new
+    {
+        node = TsSemanticEngine.NodeVersionString,
+        typescriptLib = TsSemanticEngine.FindTypeScriptLib(null),
+        semanticAvailable = TsSemanticEngine.NodeVersionString is not null && TsSemanticEngine.FindTypeScriptLib(null) is not null,
+        note = "Per-repo node_modules/typescript is also probed at analysis time; tsEngine accepts auto | semantic | syntax."
+    }
+}));
+
 app.MapGet("/api/repos", async (RepositorySessionManager manager, CancellationToken ct) =>
     Results.Ok(await manager.ListAsync(ct)));
 
@@ -262,7 +274,8 @@ static object[] ToolDefinitions() =>
         StringProperty("solutionPath", "Optional .sln/.slnx/.csproj path used by the C# module."),
         ArrayProperty("enabledModules", "Optional module filter such as csharp-roslyn or typescript-syntax.", "string"),
         BooleanProperty("reindex", "Force a full reindex even when the stored index is populated."),
-        BooleanProperty("includeTextualEvidence", "Also index identifier-like words found in string literals (default false; adds noise, ~30% more rows).")
+        BooleanProperty("includeTextualEvidence", "Also index identifier-like words found in string literals (default false; adds noise, ~30% more rows)."),
+        StringProperty("tsEngine", "TypeScript analysis engine: auto (default; semantic when Node+typescript are available), semantic, or syntax.")
     ], ["rootPath"]) },
     new { name = "list_repositories", description = "List every registered repository with its index status. Call this first to discover repositoryId values.", inputSchema = Schema([], []) },
     new { name = "repository_status", description = "Return index generation, counts, diagnostics and watcher state", inputSchema = RepoSchema() },
@@ -302,6 +315,32 @@ static object[] ToolDefinitions() =>
         IntegerProperty("startLine", "1-based first line (default 1)."),
         IntegerProperty("endLine", "1-based last line (default startLine+60).")
     ], ["repositoryId", "filePath"]) },
+    new { name = "batch", description = "Execute up to 10 tool calls in one request (e.g. search_symbols then get_source). Results return in order; a failing call does not abort the rest.", inputSchema = new
+    {
+        type = "object",
+        properties = new Dictionary<string, object>
+        {
+            ["calls"] = new
+            {
+                type = "array",
+                description = "Tool invocations to run sequentially.",
+                items = new
+                {
+                    type = "object",
+                    properties = new Dictionary<string, object>
+                    {
+                        ["tool"] = new { type = "string", description = "Tool name (any tool except batch)." },
+                        ["arguments"] = new { type = "object", description = "Arguments for that tool." }
+                    },
+                    required = new[] { "tool" }
+                },
+                minItems = 1,
+                maxItems = 10
+            }
+        },
+        required = new[] { "calls" },
+        additionalProperties = false
+    } },
     new { name = "find_callers", description = "Find methods that call a symbol", inputSchema = GraphLookupSchema() },
     new { name = "find_callees", description = "Find symbols called by a method", inputSchema = GraphLookupSchema() },
     new { name = "find_references", description = "Find reference edges around a symbol", inputSchema = GraphLookupSchema() },
@@ -369,11 +408,27 @@ static async Task<object> CallToolAsync(string tool, JsonElement args, Repositor
             var solution = Optional("solutionPath");
             var modules = args.TryGetProperty("enabledModules", out var modulesValue) && modulesValue.ValueKind == JsonValueKind.Array
                 ? modulesValue.EnumerateArray().Select(x => x.GetString()!).ToArray() : null;
-            return await manager.OpenAsync(new RepositoryDefinition(id ?? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)), root, solution, modules, OptionalBool("includeTextualEvidence", false)), OptionalBool("reindex", false), ct);
+            return await manager.OpenAsync(new RepositoryDefinition(id ?? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)), root, solution, modules, OptionalBool("includeTextualEvidence", false), Optional("tsEngine")), OptionalBool("reindex", false), ct);
+        case "batch":
+            if (!args.TryGetProperty("calls", out var callsValue) || callsValue.ValueKind != JsonValueKind.Array)
+                throw new InvalidOperationException("batch requires a calls array");
+            var batchResults = new List<object>();
+            foreach (var call in callsValue.EnumerateArray().Take(10))
+            {
+                var name = call.TryGetProperty("tool", out var toolName) ? toolName.GetString() ?? string.Empty : string.Empty;
+                var callArguments = call.TryGetProperty("arguments", out var callArgs) ? callArgs : JsonDocument.Parse("{}").RootElement;
+                if (name is "batch" or "") { batchResults.Add(new { tool = name, ok = false, error = "invalid tool name" }); continue; }
+                try { batchResults.Add(new { tool = name, ok = true, result = Envelope(await CallToolAsync(name, callArguments, manager, store, ct)) }); }
+                catch (Exception ex) when (ex is KeyNotFoundException or DirectoryNotFoundException or FileNotFoundException or InvalidOperationException or JsonException or SqliteException)
+                { batchResults.Add(new { tool = name, ok = false, error = ex.Message }); }
+            }
+            return new { results = batchResults };
         case "list_repositories":
             return await manager.ListAsync(ct);
         case "repository_status":
-            return await StatusFor(Required("repositoryId"), manager, store, ct);
+            var statusId = Required("repositoryId");
+            if (manager.Definition(statusId) is null) throw new KeyNotFoundException($"Repository '{statusId}' is not registered");
+            return await StatusFor(statusId, manager, store, ct);
         case "reindex_repository":
             var reindexId = Required("repositoryId");
             var definition = manager.Definition(reindexId) ?? throw new KeyNotFoundException($"Repository '{reindexId}' is not registered");

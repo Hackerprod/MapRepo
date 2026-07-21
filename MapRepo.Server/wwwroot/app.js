@@ -625,7 +625,16 @@ $('kindChips').querySelectorAll('.chip').forEach(chip => chip.onclick = () => {
 });
 
 $('repoSelect').onchange = () => { state.repoId = $('repoSelect').value || null; onRepoChanged(); updateStats(); };
-$('addRepo').onclick = () => { $('modalBackdrop').classList.remove('hidden'); $('mError').textContent = ''; $('mRoot').focus(); };
+$('addRepo').onclick = async () => {
+  $('modalBackdrop').classList.remove('hidden'); $('mError').textContent = ''; $('mRoot').focus();
+  try {
+    const engines = await json('/api/engines');
+    const t = engines.typescript;
+    $('mEngineInfo').innerHTML = t.semanticAvailable
+      ? `<span class="ok">✓ semantic engine ready</span> · node ${esc(t.node)} · ${esc(t.typescriptLib)}`
+      : `<span class="warn">⚠ semantic engine unavailable</span> · ${t.node ? 'node ' + esc(t.node) : 'node not found'} · typescript lib ${t.typescriptLib ? 'found' : 'not found'} — auto will use syntax analysis`;
+  } catch { $('mEngineInfo').textContent = ''; }
+};
 $('mCancel').onclick = () => $('modalBackdrop').classList.add('hidden');
 $('modalBackdrop').addEventListener('click', e => { if (e.target === $('modalBackdrop')) $('modalBackdrop').classList.add('hidden'); });
 $('mOpen').onclick = async () => {
@@ -636,7 +645,7 @@ $('mOpen').onclick = async () => {
     $('mOpen').disabled = true;
     await json('/api/repos/open', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ id, rootPath, solutionPath: $('mSolution').value.trim() || null })
+      body: JSON.stringify({ id, rootPath, solutionPath: $('mSolution').value.trim() || null, tsEngine: $('mTsEngine').value || null })
     });
     $('modalBackdrop').classList.add('hidden');
     toast(`Repository “${id}” registered — indexing runs in the background`);

@@ -5,7 +5,8 @@ public sealed record RepositoryDefinition(
     string RootPath,
     string? SolutionPath = null,
     IReadOnlyList<string>? EnabledModules = null,
-    bool IncludeTextualEvidence = false);
+    bool IncludeTextualEvidence = false,
+    string? TsEngine = null);
 
 public sealed record ModuleDescriptor(
     string Id,

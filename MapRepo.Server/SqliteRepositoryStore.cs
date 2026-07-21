@@ -74,6 +74,15 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             }
         }
 
+        if (moduleIds is { Count: > 0 })
+        {
+            var marks = string.Join(',', moduleIds.Select((_, i) => $"$n{i}"));
+            var parameters = moduleIds.Select((id, i) => ($"$n{i}", (object?)id)).ToArray();
+            await ExecuteAsync(connection, transaction, $"DELETE FROM symbols_fts5 WHERE module_id IN ({marks})", parameters, cancellationToken);
+        }
+        else await ExecuteAsync(connection, transaction, "DELETE FROM symbols_fts5", [], cancellationToken);
+        await InsertFtsAsync(connection, transaction, snapshot.Symbols, cancellationToken);
+
         await using (var command = connection.CreateCommand())
         {
             command.Transaction = transaction;
@@ -97,6 +106,7 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         var fileParameters = filePaths.Select((path, i) => ($"$f{i}", (object?)path)).Append(("$module", (object?)moduleId)).ToArray();
         await ExecuteAsync(connection, transaction, $"DELETE FROM relationships WHERE module_id=$module AND file_path IN ({fileMarks})", fileParameters, cancellationToken);
         await ExecuteAsync(connection, transaction, $"DELETE FROM symbols WHERE module_id=$module AND file_path IN ({fileMarks})", fileParameters, cancellationToken);
+        await ExecuteAsync(connection, transaction, $"DELETE FROM symbols_fts5 WHERE module_id=$module AND file_path IN ({fileMarks})", fileParameters, cancellationToken);
 
         await using (var command = connection.CreateCommand())
         {
@@ -145,6 +155,8 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             }
         }
 
+        await InsertFtsAsync(connection, transaction, symbols, cancellationToken);
+
         await using (var command = connection.CreateCommand())
         {
             command.Transaction = transaction;
@@ -161,10 +173,19 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         var symbols = new List<(SymbolRecord Symbol, double Score)>();
         var boundedLimit = Math.Clamp(limit, 1, 200);
         var extra = new StringBuilder();
+        var extraQualified = new StringBuilder(); // same predicates with columns qualified as s.* for the FTS join
         var extraParameters = new List<(string, object?)>();
-        if (!string.IsNullOrWhiteSpace(filter?.Kind)) { extra.Append(" AND kind=$kind COLLATE NOCASE"); extraParameters.Add(("$kind", filter!.Kind)); }
-        if (!string.IsNullOrWhiteSpace(filter?.PathContains)) { extra.Append(" AND lower(file_path) LIKE '%'||lower($path)||'%'"); extraParameters.Add(("$path", filter!.PathContains)); }
-        if (filter is { IncludeTextual: false }) extra.Append(" AND kind<>'textual-evidence'");
+        if (!string.IsNullOrWhiteSpace(filter?.Kind))
+        {
+            extra.Append(" AND kind=$kind COLLATE NOCASE"); extraQualified.Append(" AND s.kind=$kind COLLATE NOCASE");
+            extraParameters.Add(("$kind", filter!.Kind));
+        }
+        if (!string.IsNullOrWhiteSpace(filter?.PathContains))
+        {
+            extra.Append(" AND lower(file_path) LIKE '%'||lower($path)||'%'"); extraQualified.Append(" AND lower(s.file_path) LIKE '%'||lower($path)||'%'");
+            extraParameters.Add(("$path", filter!.PathContains));
+        }
+        if (filter is { IncludeTextual: false }) { extra.Append(" AND kind<>'textual-evidence'"); extraQualified.Append(" AND s.kind<>'textual-evidence'"); }
 
         await using (var exact = connection.CreateCommand())
         {
@@ -177,6 +198,26 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             Add(exact, extraParameters.ToArray());
             await using var reader = await exact.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken)) symbols.Add((ReadSymbol(reader), reader.GetDouble(14)));
+        }
+        if (symbols.Count == 0 && TryBuildFtsQuery(query) is { } ftsQuery)
+        {
+            // FTS5 prefix match: index-backed, scales to monorepos where LIKE '%x%' would scan the table.
+            await BackfillFtsAsync(connection, cancellationToken);
+            await using var command = connection.CreateCommand();
+            command.CommandText = $"""
+                SELECT {SymbolColumnsQualified}, 55.0 - bm25(symbols_fts5, 0.0, 0.0, 10.0, 4.0, 1.0) AS score
+                FROM symbols_fts5 JOIN symbols s ON s.id = symbols_fts5.symbol_id
+                WHERE symbols_fts5 MATCH $match{extraQualified}
+                ORDER BY bm25(symbols_fts5, 0.0, 0.0, 10.0, 4.0, 1.0), length(s.name) LIMIT $limit
+                """;
+            Add(command, ("$match", ftsQuery), ("$limit", boundedLimit));
+            Add(command, extraParameters.ToArray());
+            try
+            {
+                await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken)) symbols.Add((ReadSymbol(reader), reader.GetDouble(14)));
+            }
+            catch (SqliteException) { /* malformed MATCH input: fall through to LIKE */ }
         }
         if (symbols.Count == 0)
         {
@@ -353,13 +394,26 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
     public Task DeleteAsync(string repositoryId, CancellationToken cancellationToken = default)
     {
         _overviewCache.TryRemove(repositoryId, out _);
+        _dbPathByRepo.TryRemove(repositoryId, out _);
         SqliteConnection.ClearAllPools();
         var directory = DirectoryFor(repositoryId);
         if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
         return Task.CompletedTask;
     }
 
+    /// <summary>Turns free text into a safe FTS5 prefix query ("Execute Frame" → "\"Execute\"* \"Frame\"*"); null when no usable tokens.</summary>
+    private static string? TryBuildFtsQuery(string query)
+    {
+        var tokens = query.Split([' ', '\t', '.', ':', '/', '\\'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(t => new string(t.Where(char.IsLetterOrDigit).ToArray()))
+            .Where(t => t.Length >= 2)
+            .Take(6)
+            .ToArray();
+        return tokens.Length == 0 ? null : string.Join(' ', tokens.Select(t => $"\"{t}\"*"));
+    }
+
     private const string SymbolColumns = "id,repository_id,project,file_path,name,qualified_name,kind,start_line,start_column,end_line,end_column,signature,language,module_id";
+    private const string SymbolColumnsQualified = "s.id,s.repository_id,s.project,s.file_path,s.name,s.qualified_name,s.kind,s.start_line,s.start_column,s.end_line,s.end_column,s.signature,s.language,s.module_id";
     private const string EdgeColumns = "id,repository_id,source_id,target_id,kind,file_path,line,column_number,confidence,language,module_id";
 
     private async Task<IReadOnlyList<RelationshipRecord>> RelationshipsForAsync(SqliteConnection connection, string id, CancellationToken cancellationToken, int limit, IReadOnlyList<string>? edgeKinds = null)
@@ -456,14 +510,73 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         return Path.Combine(_root, $"{slug}__{hash}");
     }
 
+    // Schema/migration DDL must run exactly once per database per process, serialized per file:
+    // repeating DROP/CREATE VIRTUAL on every connection contends with concurrent WAL writers,
+    // and concurrent recovery attempts would hold each other's WAL hostage.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, SemaphoreSlim> _schemaLocks = new(StringComparer.OrdinalIgnoreCase);
+
+    // Once a repository's database file is chosen and its schema verified, reuse it for the process lifetime.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _dbPathByRepo = new(StringComparer.OrdinalIgnoreCase);
+
     private async Task<SqliteConnection> OpenAsync(string repositoryId, CancellationToken cancellationToken)
     {
+        if (_dbPathByRepo.TryGetValue(repositoryId, out var readyPath))
+        {
+            var ready = new SqliteConnection($"Data Source={readyPath};Cache=Private;Pooling=False;Default Timeout=60;Mode=ReadWriteCreate");
+            await ready.OpenAsync(cancellationToken);
+            return ready;
+        }
+
         var directory = DirectoryFor(repositoryId);
         Directory.CreateDirectory(directory);
-        var connection = new SqliteConnection($"Data Source={Path.Combine(directory, "index.db")};Cache=Private;Pooling=False;Default Timeout=60;Mode=ReadWriteCreate");
-        await connection.OpenAsync(cancellationToken);
-        await EnsureSchemaAsync(connection, cancellationToken);
-        return connection;
+        var gate = _schemaLocks.GetOrAdd(directory, _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_dbPathByRepo.TryGetValue(repositoryId, out readyPath))
+            {
+                var ready = new SqliteConnection($"Data Source={readyPath};Cache=Private;Pooling=False;Default Timeout=60;Mode=ReadWriteCreate");
+                await ready.OpenAsync(cancellationToken);
+                return ready;
+            }
+            // Try index.db, then numbered fallbacks. A damaged candidate (broken FTS shadow tables,
+            // orphaned WAL held by another process) is deleted when possible and skipped otherwise:
+            // the index is derived data and is rebuilt by the next indexing pass.
+            SqliteException? last = null;
+            for (var attempt = 0; attempt < 4; attempt++)
+            {
+                var dbPath = Path.Combine(directory, attempt == 0 ? "index.db" : $"index-{attempt}.db");
+                SqliteConnection? connection = null;
+                try
+                {
+                    connection = new SqliteConnection($"Data Source={dbPath};Cache=Private;Pooling=False;Default Timeout=60;Mode=ReadWriteCreate");
+                    await connection.OpenAsync(cancellationToken);
+                    await EnsureSchemaAsync(connection, cancellationToken);
+                    _dbPathByRepo[repositoryId] = dbPath;
+                    return connection;
+                }
+                catch (SqliteException ex)
+                {
+                    last = ex;
+                    if (connection is not null) await connection.DisposeAsync();
+                    SqliteConnection.ClearAllPools();
+                    try
+                    {
+                        foreach (var file in new[] { dbPath, dbPath + "-wal", dbPath + "-shm" })
+                            if (File.Exists(file)) File.Delete(file);
+                    }
+                    catch (Exception io) when (io is IOException or UnauthorizedAccessException)
+                    {
+                        // File held elsewhere: leave it behind and move on to the next candidate name.
+                    }
+                }
+            }
+            throw last!;
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     private static async Task EnsureSchemaAsync(SqliteConnection connection, CancellationToken cancellationToken)
@@ -479,8 +592,43 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             CREATE TABLE IF NOT EXISTS relationships(id TEXT PRIMARY KEY,repository_id TEXT NOT NULL,source_id TEXT NOT NULL,target_id TEXT NOT NULL,kind TEXT NOT NULL,file_path TEXT NOT NULL,line INTEGER NOT NULL,column_number INTEGER NOT NULL,confidence TEXT NOT NULL,language TEXT NOT NULL,module_id TEXT NOT NULL);
             CREATE INDEX IF NOT EXISTS idx_edges_source ON relationships(source_id);
             CREATE INDEX IF NOT EXISTS idx_edges_target ON relationships(target_id);
+            DROP TRIGGER IF EXISTS symbols_fts_ai;
+            DROP TRIGGER IF EXISTS symbols_fts_ad;
+            DROP TRIGGER IF EXISTS symbols_fts_au;
+            DROP TABLE IF EXISTS symbols_fts;
+            CREATE VIRTUAL TABLE IF NOT EXISTS symbols_fts5 USING fts5(symbol_id UNINDEXED, module_id UNINDEXED, name, qualified_name, file_path);
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    /// <summary>Rebuilds the standalone FTS table when empty (upgraded databases). Runs under an immediate
+    /// transaction so concurrent connections cannot double-fill it.</summary>
+    private static async Task BackfillFtsAsync(SqliteConnection connection, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            BEGIN IMMEDIATE;
+            INSERT INTO symbols_fts5(symbol_id, module_id, name, qualified_name, file_path)
+            SELECT id, module_id, name, qualified_name, file_path FROM symbols
+            WHERE (SELECT count(*) FROM symbols_fts5) = 0;
+            COMMIT;
+            """;
+        try { await command.ExecuteNonQueryAsync(cancellationToken); }
+        catch (SqliteException) { /* another writer holds the lock; it will backfill */ }
+    }
+
+    private static async Task InsertFtsAsync(SqliteConnection connection, SqliteTransaction transaction, IReadOnlyList<SymbolRecord> symbols, CancellationToken cancellationToken)
+    {
+        if (symbols.Count == 0) return;
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "INSERT INTO symbols_fts5(symbol_id, module_id, name, qualified_name, file_path) VALUES($id,$module,$name,$qualified,$file)";
+        var parameters = Prepare(command, ["$id", "$module", "$name", "$qualified", "$file"]);
+        foreach (var s in symbols)
+        {
+            Bind(parameters, s.Id, s.ModuleId, s.Name, s.QualifiedName, s.FilePath);
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
     }
 
     private static List<SqliteParameter> Prepare(SqliteCommand command, string[] names)

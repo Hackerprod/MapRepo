@@ -18,7 +18,7 @@ MapRepo is a resident MCP server (`http://127.0.0.1:5087/mcp`) that keeps per-re
 | Reading code | `get_source` with an exact line range — never read whole files |
 | Architecture / dependency questions | `get_graph` with `edgeKinds` filter |
 
-**Do not use it for:** one-off text/regex hunts (grep is cheaper), unregistered repos you will query once (indexing costs minutes), or TypeScript call-graph precision (the TS module links by name — verify TS edges with `get_source`).
+**Do not use it for:** one-off text/regex hunts (grep is cheaper) or unregistered repos you will query once (indexing costs minutes). TypeScript edges are checker-resolved (`confidence: "semantic"`) when the semantic engine is active; edges marked `confidence: "syntax"` are name-matched — verify those with `get_source`.
 
 ## The token contract
 
@@ -29,6 +29,7 @@ Follow this escalation order; each step is strictly cheaper than the alternative
 3. `search_symbols` — get the `symbolId` and exact location. Filter with `kind` and `pathContains`. Textual noise is off by default; only pass `includeTextual: true` when hunting protocol strings.
 4. `get_symbol` / `find_callers` / `find_callees` / `get_graph` — structure around a symbol. Keep `depth` ≤ 2 and `limit` ≤ 80 unless you have a reason. Pass `edgeKinds: ["calls"]` on `get_graph` when you only care about call flow.
 5. `get_source` — fetch only the lines you need (symbol's `startLine`–`endLine` plus a few context lines). This replaces `Read` of the whole file.
+6. `batch` — when the next 2–3 calls are already known (search → get_symbol → get_source), send them as one request: `{"calls": [{"tool": ..., "arguments": ...}, ...]}` (max 10; per-call failures don't abort the rest).
 
 ## Response format notes
 

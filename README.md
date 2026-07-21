@@ -13,7 +13,9 @@ MapRepo runs permanently on your machine, indexes the repositories you register 
 - **Strict project isolation** — every repository owns its directory (`data-v4/<slug>__<hash>/index.db`, WAL mode). Nothing is shared; removing a repository deletes exactly its own data.
 - **Restart-proof** — the registry (`data-v4/catalog.json`) restores every repository, watcher included, after a server restart, reusing stored indexes without reindexing.
 - **Token-optimized wire format** — compact DTOs, call-site aggregation (one edge per caller with a `lines` array), SQL-level edge-kind filtering and dangling-edge pruning cut typical graph responses by ~73%.
-- **Language modules as plugins** — implement one interface, drop a DLL in `MapRepo.Server/modules/`, and hybrid repositories work with no server changes. TypeScript/TSX/JS support ships in the box (syntax-level).
+- **Semantic TypeScript** — when Node.js and a `typescript` library are available (repo `node_modules`, global npm, or the server's `tools/` folder), the TS module runs the real TypeScript type checker for resolved calls, references, inheritance and imports; it falls back to the built-in syntax scanner otherwise. Selectable per repository (`tsEngine`: auto | semantic | syntax).
+- **FTS5 search** — symbol search is backed by a SQLite FTS5 index (BM25-ranked prefix matching) with a LIKE fallback, so it stays fast on monorepo-scale indexes.
+- **Language modules as plugins** — implement one interface, drop a DLL in `MapRepo.Server/modules/`, and hybrid repositories work with no server changes.
 - **3D Code Atlas** — dependency-free force-directed 3D visualization: orbit around any selected symbol, pan, zoom, animated call pulses, per-file outlines, on-demand source snippets.
 
 ## Quick start
@@ -69,6 +71,7 @@ Streamable HTTP, legacy SSE (`/sse` + `/message`) and plain JSON-RPC POST are al
 | `find_callers` / `find_callees` | Semantic call edges around a symbol (SQL-filtered to `calls`). |
 | `find_references` | Reference edges around a symbol. |
 | `get_graph` | Bounded relationship graph; `edgeKinds` restricts traversal (e.g. `["calls"]`). |
+| `batch` | Up to 10 tool calls in one request; per-call errors don't abort the rest. |
 
 ### Token contract
 
@@ -76,6 +79,15 @@ Recommended agent flow — each step bounded and cheaper than the alternative it
 
 ```
 list_repositories → repo_overview → search_symbols → get_symbol / find_* / get_graph → get_source (exact lines only)
+```
+
+Chain the steps you already know into one round-trip with `batch`:
+
+```json
+{ "calls": [
+  { "tool": "search_symbols", "arguments": { "repositoryId": "app", "query": "PaymentService" } },
+  { "tool": "repo_overview",  "arguments": { "repositoryId": "app" } }
+] }
 ```
 
 The repository corpus never enters the model. See [`skills/map-repo/SKILL.md`](skills/map-repo/SKILL.md) for the full usage guide, including when plain grep is still the better tool.
@@ -94,6 +106,10 @@ Every module emits the same intermediate representation; the session manager mer
 ### Watcher behavior
 
 Ignores `.git`, `bin`, `obj`, `node_modules`, `dist`, `build`, `coverage`; debounces 750 ms; handles create/change/rename/delete. C# changes take the incremental path (new files trigger one full module run that re-caches the workspace). String-literal mining (`textual-evidence`) is off by default — it inflated indexes ~30% with noise; enable per repository only when you need to search embedded protocol strings.
+
+### TypeScript engine resolution
+
+`GET /api/engines` reports availability. The semantic engine probes, in order: the repository's own `node_modules/typescript`, `MAPREPO_TS_LIB`, the server's `MapRepo.Server/tools/node_modules/typescript` (install once with `npm install --prefix MapRepo.Server/tools typescript@5`), and the global npm root. TypeScript 5.x is required (the v7 native preview does not expose the JS compiler API).
 
 ### Adding a language module
 

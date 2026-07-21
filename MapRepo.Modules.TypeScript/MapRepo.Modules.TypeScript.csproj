@@ -2,6 +2,9 @@
   <ItemGroup>
     <ProjectReference Include="..\MapRepo.Core\MapRepo.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ts-semantic.mjs" />
+  </ItemGroup>
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

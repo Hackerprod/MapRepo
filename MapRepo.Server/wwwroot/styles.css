@@ -205,6 +205,13 @@ body {
   color: var(--text); padding: 0 12px; font: inherit; font-size: 13px; outline: none; text-transform: none; letter-spacing: 0;
 }
 .modal input:focus { border-color: var(--accent); }
+.modal select {
+  height: 36px; border-radius: 9px; border: 1px solid var(--panel-border); background: rgba(8,13,24,.9);
+  color: var(--text); padding: 0 8px; font: inherit; font-size: 13px; outline: none; text-transform: none; letter-spacing: 0;
+}
+.engine-info { font-size: 11px; color: var(--muted2); margin: -4px 0 10px; line-height: 1.5; }
+.engine-info .ok { color: var(--good); }
+.engine-info .warn { color: #ffd54f; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 .modal-error { color: var(--bad); font-size: 12px; margin-top: 10px; min-height: 16px; }
 

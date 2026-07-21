@@ -106,6 +106,14 @@
       <label>Root path<input id="mRoot" placeholder="D:\src\my-repo"></label>
       <label>Repository id <span class="opt">optional</span><input id="mId" placeholder="my-repo"></label>
       <label>Solution / project <span class="opt">optional</span><input id="mSolution" placeholder=".sln / .slnx / .csproj"></label>
+      <label>TypeScript engine
+        <select id="mTsEngine">
+          <option value="">Auto (semantic when Node + typescript are available)</option>
+          <option value="semantic">Semantic — Node + type checker</option>
+          <option value="syntax">Syntax — built-in scanner</option>
+        </select>
+      </label>
+      <div id="mEngineInfo" class="engine-info"></div>
       <div class="modal-actions">
         <button id="mCancel" class="btn ghost">Cancel</button>
         <button id="mOpen" class="btn primary">Open &amp; index</button>

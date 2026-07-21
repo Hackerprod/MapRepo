@@ -7,13 +7,23 @@ namespace MapRepo.Modules.TypeScript;
 public sealed class TypeScriptModule : IRepositoryLanguageModule
 {
     public ModuleDescriptor Descriptor { get; } = new(
-        "typescript-syntax", "TypeScript / TSX", ["typescript", "tsx", "javascript", "jsx"], "1.0.0", false);
+        "typescript-syntax", "TypeScript / TSX", ["typescript", "tsx", "javascript", "jsx"], "2.0.0", true);
 
     public bool CanAnalyze(string filePath) => IsSource(filePath);
 
     public async Task<AnalysisSnapshot> AnalyzeAsync(AnalysisRequest request)
     {
         var diagnostics = new List<string>();
+        // Engine selection: "semantic" forces the Node/type-checker engine, "syntax" forces the
+        // built-in scanner, null/"auto" tries semantic first and falls back to syntax.
+        var engine = request.Repository.TsEngine?.Trim().ToLowerInvariant();
+        if (engine is null or "" or "auto" or "semantic")
+        {
+            var semantic = await TsSemanticEngine.TryAnalyzeAsync(request, diagnostics);
+            if (semantic is not null) return semantic;
+            if (engine == "semantic")
+                diagnostics.Add("tsEngine=semantic was requested but the engine is unavailable; falling back to syntax analysis");
+        }
         var files = EnumerateFiles(request.Repository.RootPath);
         var units = new List<FileUnit>();
         foreach (var path in files)
