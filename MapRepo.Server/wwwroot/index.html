@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MapRepo · 3D Code Atlas</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <canvas id="space"></canvas>
+
+  <header class="topbar glass">
+    <div class="brand">
+      <span class="brand-mark">◈</span>
+      <span class="brand-name">MapRepo</span>
+      <span class="brand-sub">3D Code Atlas</span>
+    </div>
+    <div class="repo-controls">
+      <select id="repoSelect" title="Repository"></select>
+      <button id="addRepo" class="btn ghost" title="Register repository">+ Add</button>
+      <button id="reindexRepo" class="btn ghost" title="Force full reindex">⟳</button>
+    </div>
+    <div class="top-status">
+      <span id="repoStats" class="repo-stats"></span>
+      <span id="health" class="health"><i class="dot"></i>offline</span>
+    </div>
+  </header>
+
+  <aside class="panel left glass" id="leftPanel">
+    <div class="tabs">
+      <button class="tab active" data-tab="search">Search</button>
+      <button class="tab" data-tab="files">Files</button>
+      <button class="tab" data-tab="overview">Overview</button>
+      <button class="panel-collapse" id="collapseLeft" title="Collapse">‹</button>
+    </div>
+    <div class="tab-body" id="tab-search">
+      <div class="search-row">
+        <input id="query" placeholder="Search class, method, symbol…" autocomplete="off">
+      </div>
+      <div class="chips" id="kindChips">
+        <button class="chip active" data-kind="">all</button>
+        <button class="chip" data-kind="NamedType">types</button>
+        <button class="chip" data-kind="Method">methods</button>
+        <button class="chip" data-kind="Property">props</button>
+        <button class="chip" data-kind="class">ts class</button>
+        <button class="chip" data-kind="function">ts fn</button>
+      </div>
+      <div id="results" class="results scroll"></div>
+    </div>
+    <div class="tab-body hidden" id="tab-files">
+      <div class="search-row"><input id="fileFilter" placeholder="Filter files…" autocomplete="off"></div>
+      <div id="fileList" class="results scroll"></div>
+    </div>
+    <div class="tab-body hidden" id="tab-overview">
+      <div id="overview" class="overview scroll"></div>
+    </div>
+  </aside>
+  <button class="panel-restore glass hidden" id="restoreLeft" title="Open panel">›</button>
+
+  <aside class="panel right glass hidden" id="detailPanel">
+    <div class="detail-head">
+      <div>
+        <div id="detailName" class="detail-name"></div>
+        <div id="detailKind" class="detail-kind"></div>
+      </div>
+      <button class="panel-collapse" id="closeDetail" title="Close">✕</button>
+    </div>
+    <div class="detail-body scroll">
+      <div id="detailFile" class="detail-file mono"></div>
+      <div id="detailSignature" class="detail-signature mono"></div>
+      <div class="detail-actions">
+        <button id="centerHere" class="btn primary">◎ Center graph here</button>
+        <button id="loadSource" class="btn ghost">⌘ View source</button>
+      </div>
+      <pre id="sourceView" class="source mono hidden"></pre>
+      <div class="detail-section" id="edgesOut"><h4>Outgoing</h4><div class="edge-list"></div></div>
+      <div class="detail-section" id="edgesIn"><h4>Incoming</h4><div class="edge-list"></div></div>
+    </div>
+  </aside>
+
+  <div class="hud glass" id="hud">
+    <div class="hud-row legend" id="legend"></div>
+    <div class="hud-row">
+      <label class="hud-label">depth <input id="depth" type="range" min="1" max="4" value="2"><span id="depthValue">2</span></label>
+      <label class="hud-label">nodes <input id="limitRange" type="range" min="30" max="300" step="10" value="120"><span id="limitValue">120</span></label>
+    </div>
+    <div class="hud-row">
+      <button id="toggleSpin" class="btn mini active" title="Auto-rotate">orbit</button>
+      <button id="togglePhysics" class="btn mini active" title="Force layout">physics</button>
+      <button id="toggleLabels" class="btn mini active" title="Labels">labels</button>
+      <button id="resetCamera" class="btn mini" title="Reset view">reset</button>
+    </div>
+  </div>
+
+  <div id="tooltip" class="tooltip glass hidden"></div>
+  <div id="toast" class="toast hidden"></div>
+  <div id="emptyHint" class="empty-hint">
+    <div class="empty-glyph">◈</div>
+    <p>Select a repository and search a symbol —<br>its relationship graph renders here in 3D.</p>
+    <p class="empty-tips">drag orbit · right/shift-drag or arrows pan · wheel zoom · click select · double-click re-center · 0 reset</p>
+  </div>
+
+  <div class="modal-backdrop hidden" id="modalBackdrop">
+    <div class="modal glass">
+      <h3>Register repository</h3>
+      <label>Root path<input id="mRoot" placeholder="D:\src\my-repo"></label>
+      <label>Repository id <span class="opt">optional</span><input id="mId" placeholder="my-repo"></label>
+      <label>Solution / project <span class="opt">optional</span><input id="mSolution" placeholder=".sln / .slnx / .csproj"></label>
+      <div class="modal-actions">
+        <button id="mCancel" class="btn ghost">Cancel</button>
+        <button id="mOpen" class="btn primary">Open &amp; index</button>
+      </div>
+      <div id="mError" class="modal-error"></div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
