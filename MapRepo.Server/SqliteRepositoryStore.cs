@@ -14,6 +14,9 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
     private readonly string _root;
     // Overview aggregations are only worth recomputing when the index generation moves.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string? Generation, RepositoryOverview Value)> _overviewCache = new(StringComparer.OrdinalIgnoreCase);
+    // Marks a repository as having a populated symbols_fts5 at least once this process — the
+    // backfill migration only ever matters for a database created before FTS existed.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> _ftsBackfilled = new(StringComparer.OrdinalIgnoreCase);
 
     public SqliteRepositoryStore(IHostEnvironment environment)
     {
@@ -202,7 +205,10 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         if (symbols.Count == 0 && TryBuildFtsQuery(query) is { } ftsQuery)
         {
             // FTS5 prefix match: index-backed, scales to monorepos where LIKE '%x%' would scan the table.
-            await BackfillFtsAsync(connection, cancellationToken);
+            // The backfill (a BEGIN IMMEDIATE write transaction) is only ever needed once per database
+            // — for one upgraded from a schema without the FTS table — so it runs at most once per
+            // repository per process lifetime instead of on every search.
+            if (_ftsBackfilled.TryAdd(repositoryId, true)) await BackfillFtsAsync(connection, cancellationToken);
             await using var command = connection.CreateCommand();
             command.CommandText = $"""
                 SELECT {SymbolColumnsQualified}, 55.0 - bm25(symbols_fts5, 0.0, 0.0, 10.0, 4.0, 1.0) AS score
@@ -395,6 +401,7 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
     {
         _overviewCache.TryRemove(repositoryId, out _);
         _dbPathByRepo.TryRemove(repositoryId, out _);
+        _ftsBackfilled.TryRemove(repositoryId, out _);
         SqliteConnection.ClearAllPools();
         var directory = DirectoryFor(repositoryId);
         if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
@@ -527,7 +534,9 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
     {
         if (_dbPathByRepo.TryGetValue(repositoryId, out var readyPath))
         {
-            var ready = new SqliteConnection($"Data Source={readyPath};Cache=Private;Pooling=False;Default Timeout=60;Mode=ReadWriteCreate");
+            // Schema already verified for this file: pool the native handle so the common case
+            // (search/graph/status) pays connection-open + WAL header parsing once, not per call.
+            var ready = new SqliteConnection($"Data Source={readyPath};Cache=Private;Pooling=True;Default Timeout=60;Mode=ReadWriteCreate");
             await ready.OpenAsync(cancellationToken);
             return ready;
         }
@@ -540,7 +549,7 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         {
             if (_dbPathByRepo.TryGetValue(repositoryId, out readyPath))
             {
-                var ready = new SqliteConnection($"Data Source={readyPath};Cache=Private;Pooling=False;Default Timeout=60;Mode=ReadWriteCreate");
+                var ready = new SqliteConnection($"Data Source={readyPath};Cache=Private;Pooling=True;Default Timeout=60;Mode=ReadWriteCreate");
                 await ready.OpenAsync(cancellationToken);
                 return ready;
             }

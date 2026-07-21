@@ -4,12 +4,25 @@ using MapRepo.Core;
 
 namespace MapRepo.Modules.TypeScript;
 
-public sealed class TypeScriptModule : IRepositoryLanguageModule
+public sealed class TypeScriptModule : IRepositoryLanguageModule, IIncrementalAnalyzer, IRepositoryLifecycle
 {
     public ModuleDescriptor Descriptor { get; } = new(
         "typescript-syntax", "TypeScript / TSX", ["typescript", "tsx", "javascript", "jsx"], "2.0.0", true);
 
     public bool CanAnalyze(string filePath) => IsSource(filePath);
+
+    /// <summary>Incremental path: only reachable (and only useful) when the semantic engine's
+    /// persistent daemon is already warm for this repository — a null here makes the caller fall
+    /// back to a full <see cref="AnalyzeAsync"/> run, which starts/warms the daemon for next time.</summary>
+    public async Task<FileAnalysisDelta?> AnalyzeFilesAsync(AnalysisRequest request)
+    {
+        var engine = request.Repository.TsEngine?.Trim().ToLowerInvariant();
+        if (engine == "syntax") return null;
+        var diagnostics = new List<string>();
+        return await TsSemanticEngine.TryAnalyzeFilesAsync(request, diagnostics);
+    }
+
+    public void ReleaseRepository(string repositoryId) => TsSemanticEngine.ReleaseRepository(repositoryId);
 
     public async Task<AnalysisSnapshot> AnalyzeAsync(AnalysisRequest request)
     {
