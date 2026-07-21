@@ -27,7 +27,7 @@ Follow this escalation order; each step is strictly cheaper than the alternative
 1. `list_repositories` — discover what is already indexed. Never re-register a repo that is listed.
 2. `repo_overview` — one call replaces an entire exploratory session (listing directories, opening files). Hub symbols tell you where the architecture lives.
 3. `search_symbols` — get the `symbolId` and exact location. Filter with `kind` and `pathContains`. Textual noise is off by default; only pass `includeTextual: true` when hunting protocol strings.
-4. `get_symbol` / `find_callers` / `find_callees` / `get_graph` — structure around a symbol. Keep `depth` ≤ 2 and `limit` ≤ 80 unless you have a reason. Pass `edgeKinds: ["calls"]` on `get_graph` when you only care about call flow.
+4. `get_symbol` / `find_callers` / `find_callees` / `get_graph` — structure around a symbol. Keep `depth` ≤ 2 and `limit` ≤ 80 unless you have a reason. Pass `edgeKinds: ["calls"]` on `get_graph` when you only care about call flow (only `get_graph` accepts it — `find_callers`/`find_callees`/`find_references` already fix their own single edge kind). `get_symbol`'s `limit` defaults to 40 per direction on purpose — hub symbols can have hundreds of edges; only raise it when `outgoingTruncated`/`incomingTruncated` come back true.
 5. `get_source` — fetch only the lines you need (symbol's `startLine`–`endLine` plus a few context lines). This replaces `Read` of the whole file.
 6. `batch` — when the next 2–3 calls are already known (search → get_symbol → get_source), send them as one request: `{"calls": [{"tool": ..., "arguments": ...}, ...]}` (max 10; per-call failures don't abort the rest).
 
@@ -35,7 +35,8 @@ Follow this escalation order; each step is strictly cheaper than the alternative
 
 - Edges are aggregated: one edge per (source, target, kind, file) with a `lines` array of call sites (capped at 8; `count` present when more exist).
 - Constant fields (repository id, language, module, confidence) are omitted from tool responses — do not expect them per record.
-- `truncated: true` on a graph means the node budget was hit; raise `limit` or narrow `edgeKinds` instead of re-calling blindly.
+- `truncated: true` on a graph means the node budget was hit; raise `limit` or narrow `edgeKinds` instead of re-calling blindly. `search_symbols` and `list_files` carry the same `truncated` flag next to `items`; `get_symbol` carries it as separate `outgoingTruncated`/`incomingTruncated` booleans (each direction is bounded independently).
+- No tool declares an MCP `outputSchema`, so responses carry only `content[0].text` (JSON-serialized) — there is no separate `structuredContent` to read.
 
 ## Registering repositories
 

@@ -41,7 +41,7 @@ public static class McpToolCatalog
         new("get_symbol", "Full detail for one symbol: record, incoming and outgoing edges, and neighbor symbols", Schema([
             StringProperty("repositoryId", "Repository id."),
             StringProperty("symbolId", "Symbol id from search_symbols or graph results."),
-            IntegerProperty("limit", "Maximum edges per direction.")
+            IntegerProperty("limit", "Maximum edges per direction (default 40; hub symbols can have hundreds — raise only when outgoingTruncated/incomingTruncated come back true).")
         ], ["repositoryId", "symbolId"])),
         new("file_outline", "All declarations in one file ordered by line — read this instead of the file to save tokens", Schema([
             StringProperty("repositoryId", "Repository id."),
@@ -84,13 +84,22 @@ public static class McpToolCatalog
             required = new[] { "calls" },
             additionalProperties = false
         }),
-        new("find_callers", "Find methods that call a symbol", GraphLookupSchema()),
-        new("find_callees", "Find symbols called by a method", GraphLookupSchema()),
-        new("find_references", "Find reference edges around a symbol", GraphLookupSchema()),
+        new("find_callers", "Find methods that call a symbol", SymbolLookupSchema()),
+        new("find_callees", "Find symbols called by a method", SymbolLookupSchema()),
+        new("find_references", "Find reference edges around a symbol", SymbolLookupSchema()),
         new("get_graph", "Return a bounded symbol graph for Canvas or agent reasoning", GraphLookupSchema())
     ];
 
     private static object RepoSchema() => Schema([StringProperty("repositoryId", "Repository id.")], ["repositoryId"]);
+
+    // find_callers/find_callees/find_references each hard-code their own single edge kind
+    // (calls/calls/references) in the dispatcher — edgeKinds would be a no-op parameter for them.
+    private static object SymbolLookupSchema() => Schema([
+        StringProperty("repositoryId", "Repository id."),
+        StringProperty("symbolId", "Symbol id from search_symbols or graph results."),
+        IntegerProperty("depth", "Graph traversal depth."),
+        IntegerProperty("limit", "Maximum node/edge count.")
+    ], ["repositoryId", "symbolId"]);
 
     private static object GraphLookupSchema() => Schema([
         StringProperty("repositoryId", "Repository id."),

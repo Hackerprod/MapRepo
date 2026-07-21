@@ -123,30 +123,44 @@ public sealed class McpDispatcher
                     hubs = overview.Hubs.Select(h => new { symbol = CompactSymbol(h.Symbol), h.Degree }).ToArray()
                 };
             case "search_symbols":
-                var searchResults = await _store.SearchAsync(Required("repositoryId"), Required("query"), OptionalInt("limit", 20),
+                var searchLimit = OptionalInt("limit", 20);
+                var searchResults = await _store.SearchAsync(Required("repositoryId"), Required("query"), searchLimit,
                     new SearchFilter(Optional("kind"), Optional("pathContains"), OptionalBool("includeTextual", false)), ct);
                 var withRelationships = OptionalBool("includeRelationships", false);
-                return searchResults.Select(r => new
+                return new
                 {
-                    symbol = CompactSymbol(r.Symbol),
-                    r.Score,
-                    relationships = withRelationships ? CompactEdges(r.Relationships) : null
-                }).ToArray();
+                    items = searchResults.Select(r => new
+                    {
+                        symbol = CompactSymbol(r.Symbol),
+                        r.Score,
+                        relationships = withRelationships ? CompactEdges(r.Relationships) : null
+                    }).ToArray(),
+                    // SearchAsync clamps to 200 internally; a full result set means more may exist. Raise limit to see them.
+                    truncated = searchResults.Count == Math.Clamp(searchLimit, 1, 200)
+                };
             case "get_symbol":
-                var detail = await _store.SymbolAsync(Required("repositoryId"), Required("symbolId"), OptionalInt("limit", 100), ct)
+                // Hub symbols can have hundreds of edges; default kept modest so one call doesn't
+                // pull an unbounded amount of context — raise limit explicitly for popular symbols.
+                var symbolLimit = OptionalInt("limit", 40);
+                var detail = await _store.SymbolAsync(Required("repositoryId"), Required("symbolId"), symbolLimit, ct)
                     ?? throw new KeyNotFoundException($"Symbol not found: {args.GetProperty("symbolId").GetString()}");
+                var symbolEffectiveLimit = Math.Clamp(symbolLimit, 1, 400);
                 return new
                 {
                     symbol = CompactSymbol(detail.Symbol),
                     outgoing = CompactEdges(detail.Outgoing),
+                    outgoingTruncated = detail.Outgoing.Count == symbolEffectiveLimit,
                     incoming = CompactEdges(detail.Incoming),
+                    incomingTruncated = detail.Incoming.Count == symbolEffectiveLimit,
                     neighbors = detail.Neighbors.Select(CompactSymbol).ToArray()
                 };
             case "file_outline":
                 var outline = await _store.OutlineAsync(Required("repositoryId"), Required("filePath"), ct);
                 return new { outline.RepositoryId, outline.FilePath, symbols = outline.Symbols.Select(CompactSymbol).ToArray() };
             case "list_files":
-                return await _store.FilesAsync(Required("repositoryId"), Optional("contains"), OptionalInt("limit", 500), ct);
+                var filesLimit = OptionalInt("limit", 500);
+                var files = await _store.FilesAsync(Required("repositoryId"), Optional("contains"), filesLimit, ct);
+                return new { items = files, truncated = files.Count == Math.Clamp(filesLimit, 1, 2000) };
             case "get_source":
                 return await _manager.SourceAsync(Required("repositoryId"), Required("filePath"), OptionalInt("startLine", 1), OptionalInt("endLine", 0), ct);
             case "find_callers":
