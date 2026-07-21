@@ -99,7 +99,12 @@ public sealed class McpDispatcher
             case "batch":
                 if (!args.TryGetProperty("calls", out var callsValue) || callsValue.ValueKind != JsonValueKind.Array)
                     throw new InvalidOperationException("batch requires a calls array");
-                var callArray = callsValue.EnumerateArray().Take(10).ToArray();
+                // The schema advertises maxItems: 10, but nothing enforced it here — .Take(10) used
+                // to silently drop the rest, so a caller who sent 15 calls got 10 back with isError
+                // false and no indication anything was dropped. Reject instead of truncating quietly.
+                if (callsValue.GetArrayLength() > 10)
+                    throw new InvalidOperationException($"batch accepts at most 10 calls; got {callsValue.GetArrayLength()}. Split into multiple batches.");
+                var callArray = callsValue.EnumerateArray().ToArray();
                 var batchResults = new List<object>();
                 var usedBytes = 0;
                 var stoppedAt = -1;

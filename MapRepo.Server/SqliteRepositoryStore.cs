@@ -18,6 +18,11 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
     // Marks a repository as having a populated symbols_fts5 at least once this process — the
     // backfill migration only ever matters for a database created before FTS existed.
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, bool> _ftsBackfilled = new(StringComparer.OrdinalIgnoreCase);
+    // list_files' `contains` filter is a leading-wildcard LIKE — can't use an index, so it's a full
+    // table scan every time. OS page-cache warmth after that first scan isn't durable (build/dev
+    // activity on the same machine evicts it under memory pressure), so cache the actual result
+    // per (repo, generation, contains, limit) instead of hoping the disk stays warm.
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string? Generation, IReadOnlyList<FileEntry> Value)> _filesCache = new(StringComparer.OrdinalIgnoreCase);
 
     private readonly ILogger<SqliteRepositoryStore> _logger;
 
@@ -99,27 +104,6 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
         await transaction.CommitAsync(cancellationToken);
-        _ = WarmSearchCacheAsync(snapshot.RepositoryId);
-    }
-
-    // search_symbols' LIKE fallback tier (only reached when a query matches neither the exact nor
-    // FTS5 tier) does a full SCAN symbols — unavoidable for a leading-wildcard LIKE, and normally
-    // fast (tens of ms), but the very first time it runs against a freshly (re)written database it
-    // pays a real cold-disk cost for paging in every row (seconds, not ms; confirmed via a repeat
-    // call dropping from ~2s to ~40ms once warm). Running one throwaway full-scan right after a
-    // reindex — off the request path, best-effort — moves that one-time cost off an agent's first
-    // miss query and onto the reindex that was already going to take a while anyway.
-    private async Task WarmSearchCacheAsync(string repositoryId)
-    {
-        try
-        {
-            await using var connection = await OpenAsync(repositoryId, CancellationToken.None);
-            await using var command = connection.CreateCommand();
-            command.CommandText = "SELECT count(*) FROM symbols WHERE name LIKE '%warm-up-never-matches%'";
-            await command.ExecuteScalarAsync();
-            await OverviewAsync(repositoryId, includeGenerated: false, cancellationToken: CancellationToken.None);
-        }
-        catch { /* best-effort warm-up only; never let this surface past the reindex it followed */ }
     }
 
     public async Task ReplaceFilesAsync(string repositoryId, string moduleId, IReadOnlyList<string> filePaths,
@@ -429,15 +413,21 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
 
     public async Task<IReadOnlyList<FileEntry>> FilesAsync(string repositoryId, string? contains, int limit, CancellationToken cancellationToken = default)
     {
+        var boundedLimit = Math.Clamp(limit, 1, 2000);
+        var status = await StatusAsync(repositoryId, cancellationToken);
+        var cacheKey = $"{repositoryId}|{contains ?? ""}|{boundedLimit}";
+        if (_filesCache.TryGetValue(cacheKey, out var cached) && cached.Generation == status.Generation && status.Generation is not null)
+            return cached.Value;
         await using var connection = await OpenAsync(repositoryId, cancellationToken);
         await using var command = connection.CreateCommand();
         var where = string.IsNullOrWhiteSpace(contains) ? string.Empty : " AND lower(file_path) LIKE '%'||lower($contains)||'%' ESCAPE '\\'";
         command.CommandText = $"SELECT file_path, count(*), max(language) FROM symbols WHERE kind<>'textual-evidence'{where} GROUP BY file_path ORDER BY file_path LIMIT $limit";
         if (!string.IsNullOrWhiteSpace(contains)) Add(command, ("$contains", EscapeLikePattern(contains)));
-        Add(command, ("$limit", Math.Clamp(limit, 1, 2000)));
+        Add(command, ("$limit", boundedLimit));
         var files = new List<FileEntry>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken)) files.Add(new FileEntry(reader.GetString(0), reader.GetInt32(1), reader.GetString(2)));
+        _filesCache[cacheKey] = (status.Generation, files);
         return files;
     }
 
