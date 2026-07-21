@@ -52,8 +52,11 @@ public sealed class McpDispatcher
         var arguments = parameters.TryGetProperty("arguments", out var args) ? args : JsonDocument.Parse("{}").RootElement;
         try
         {
-            var result = Envelope(await DispatchToolAsync(tool, arguments, cancellationToken));
-            return RpcResult(id, new { content = new[] { new { type = "text", text = JsonSerializer.Serialize(result, JsonOptions) } }, structuredContent = result, isError = false });
+            // content[0].text is the sole payload: no tool declares outputSchema, so a parallel
+            // structuredContent field (the MCP spec's pairing for outputSchema-typed results)
+            // would only double every response's size for no client benefit.
+            var result = await DispatchToolAsync(tool, arguments, cancellationToken);
+            return RpcResult(id, new { content = new[] { new { type = "text", text = JsonSerializer.Serialize(result, JsonOptions) } }, isError = false });
         }
         catch (Exception ex) when (IsToolFailure(ex))
         {
@@ -92,7 +95,7 @@ public sealed class McpDispatcher
                     var name = call.TryGetProperty("tool", out var toolName) ? toolName.GetString() ?? string.Empty : string.Empty;
                     var callArguments = call.TryGetProperty("arguments", out var callArgs) ? callArgs : JsonDocument.Parse("{}").RootElement;
                     if (name is "batch" or "") { batchResults.Add(new { tool = name, ok = false, error = "invalid tool name" }); continue; }
-                    try { batchResults.Add(new { tool = name, ok = true, result = Envelope(await DispatchToolAsync(name, callArguments, ct)) }); }
+                    try { batchResults.Add(new { tool = name, ok = true, result = await DispatchToolAsync(name, callArguments, ct) }); }
                     catch (Exception ex) when (IsToolFailure(ex))
                     { batchResults.Add(new { tool = name, ok = false, error = ex.Message }); }
                 }
@@ -206,9 +209,6 @@ public sealed class McpDispatcher
             count = g.Count() > 8 ? (int?)g.Count() : null
         })
         .ToArray();
-
-    // The MCP spec requires structuredContent to be a JSON object; array results get wrapped.
-    private static object Envelope(object result) => result is System.Collections.IEnumerable and not string ? new { items = result } : result;
 
     private static object RpcResult(JsonElement? id, object result) => new { jsonrpc = "2.0", id = id ?? JsonDocument.Parse("null").RootElement, result };
     private static object RpcError(JsonElement? id, int code, string message) => new { jsonrpc = "2.0", id = id ?? JsonDocument.Parse("null").RootElement, error = new { code, message } };
