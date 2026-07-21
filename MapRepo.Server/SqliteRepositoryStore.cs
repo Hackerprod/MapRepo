@@ -614,9 +614,22 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         {
             // Schema already verified for this file: pool the native handle so the common case
             // (search/graph/status) pays connection-open + WAL header parsing once, not per call.
-            var ready = new SqliteConnection($"Data Source={readyPath};Cache=Private;Pooling=True;Default Timeout=60;Mode=ReadWriteCreate");
-            await ready.OpenAsync(cancellationToken);
-            return ready;
+            try
+            {
+                var ready = new SqliteConnection($"Data Source={readyPath};Cache=Private;Pooling=True;Default Timeout=60;Mode=ReadWriteCreate");
+                await ready.OpenAsync(cancellationToken);
+                return ready;
+            }
+            catch (SqliteException)
+            {
+                // A pooled native handle can end up poisoned by a transient disk error (I/O error,
+                // dropped network volume, antivirus lock): once that happens, every future open on
+                // the same connection string fails identically forever, since nothing ever clears
+                // the pool or the cached path. Drop both and fall through to the slow path below,
+                // which reopens the file directly and self-heals a genuinely damaged database.
+                _dbPathByRepo.TryRemove(repositoryId, out _);
+                SqliteConnection.ClearAllPools();
+            }
         }
 
         var directory = DirectoryFor(repositoryId);
@@ -627,9 +640,17 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         {
             if (_dbPathByRepo.TryGetValue(repositoryId, out readyPath))
             {
-                var ready = new SqliteConnection($"Data Source={readyPath};Cache=Private;Pooling=True;Default Timeout=60;Mode=ReadWriteCreate");
-                await ready.OpenAsync(cancellationToken);
-                return ready;
+                try
+                {
+                    var ready = new SqliteConnection($"Data Source={readyPath};Cache=Private;Pooling=True;Default Timeout=60;Mode=ReadWriteCreate");
+                    await ready.OpenAsync(cancellationToken);
+                    return ready;
+                }
+                catch (SqliteException)
+                {
+                    _dbPathByRepo.TryRemove(repositoryId, out _);
+                    SqliteConnection.ClearAllPools();
+                }
             }
             // Try index.db, then numbered fallbacks. A damaged candidate (broken FTS shadow tables,
             // orphaned WAL held by another process) is deleted when possible and skipped otherwise:
