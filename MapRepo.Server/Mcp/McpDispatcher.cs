@@ -13,6 +13,11 @@ namespace MapRepo.Server;
 /// </summary>
 public sealed class McpDispatcher
 {
+    // A batch of 10 calls (get_source, search_symbols, ...) can otherwise return enough combined
+    // JSON to trigger the calling agent's own context compaction. Bounding one batch response and
+    // handing back a resume cursor (nextIndex) keeps every response individually small instead.
+    private const int BatchByteBudget = 200_000;
+
     private readonly RepositorySessionManager _manager;
     private readonly IRepositoryStore _store;
 
@@ -94,17 +99,37 @@ public sealed class McpDispatcher
             case "batch":
                 if (!args.TryGetProperty("calls", out var callsValue) || callsValue.ValueKind != JsonValueKind.Array)
                     throw new InvalidOperationException("batch requires a calls array");
+                var callArray = callsValue.EnumerateArray().Take(10).ToArray();
                 var batchResults = new List<object>();
-                foreach (var call in callsValue.EnumerateArray().Take(10))
+                var usedBytes = 0;
+                var stoppedAt = -1;
+                for (var i = 0; i < callArray.Length; i++)
                 {
+                    // Check the budget BEFORE running the call, not after: a call whose own
+                    // result blows the budget still gets to run once (progress is never zero),
+                    // but we never pay for one we're about to discard.
+                    if (usedBytes >= BatchByteBudget) { stoppedAt = i; break; }
+                    var call = callArray[i];
                     var name = call.TryGetProperty("tool", out var toolName) ? toolName.GetString() ?? string.Empty : string.Empty;
                     var callArguments = call.TryGetProperty("arguments", out var callArgs) ? callArgs : JsonDocument.Parse("{}").RootElement;
-                    if (name is "batch" or "") { batchResults.Add(new { tool = name, ok = false, error = "invalid tool name" }); continue; }
-                    try { batchResults.Add(new { tool = name, ok = true, result = await DispatchToolAsync(name, callArguments, ct) }); }
-                    catch (Exception ex) when (IsToolFailure(ex))
-                    { batchResults.Add(new { tool = name, ok = false, error = ex.Message }); }
+                    object entry;
+                    if (name is "batch" or "") entry = new { tool = name, ok = false, error = "invalid tool name" };
+                    else
+                    {
+                        try { entry = new { tool = name, ok = true, result = await DispatchToolAsync(name, callArguments, ct) }; }
+                        catch (Exception ex) when (IsToolFailure(ex)) { entry = new { tool = name, ok = false, error = ex.Message }; }
+                    }
+                    batchResults.Add(entry);
+                    usedBytes += JsonSerializer.Serialize(entry, JsonOptions).Length;
                 }
-                return new { results = batchResults };
+                if (stoppedAt < 0) return new { results = batchResults };
+                return new
+                {
+                    results = batchResults,
+                    truncated = true,
+                    nextIndex = stoppedAt,
+                    note = $"Stopped after {batchResults.Count}/{callArray.Length} call(s): response size budget reached. Resend the remaining calls (starting at index {stoppedAt}) in a new batch."
+                };
             case "list_repositories":
                 return await _manager.ListAsync(ct);
             case "repository_status":

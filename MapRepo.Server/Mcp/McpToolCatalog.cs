@@ -63,7 +63,7 @@ public static class McpToolCatalog
             IntegerProperty("startLine", "1-based first line (default 1)."),
             IntegerProperty("endLine", "1-based last line (default startLine+60).")
         ], ["repositoryId", "filePath"])),
-        new("batch", "Execute up to 10 tool calls in one request (e.g. search_symbols then get_source). Results return in order; a failing call does not abort the rest.", new
+        new("batch", "Execute up to 10 tool calls in one request (e.g. search_symbols then get_source). Results return in order; a failing call does not abort the rest. The combined response is capped (~200KB) so one batch can't blow past what fits in a reply — if the cap is hit, the response carries truncated:true and nextIndex: resend the remaining calls in a new batch starting at that index.", new
         {
             type = "object",
             properties = new Dictionary<string, object>
