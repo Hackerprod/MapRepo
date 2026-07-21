@@ -189,11 +189,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
     private static int ProjectScore(string root, string path)
     {
         var normalized = path.Replace('\\', '/');
-        var name = Path.GetFileNameWithoutExtension(path);
         var score = path.EndsWith(".sln", StringComparison.OrdinalIgnoreCase) ? 20 : 0;
-        if (normalized.Contains("/SKYNET server/", StringComparison.OrdinalIgnoreCase)) score += 200;
-        if (name.Contains("server", StringComparison.OrdinalIgnoreCase)) score += 50;
-        if (name.Contains("steam_api", StringComparison.OrdinalIgnoreCase)) score += 20;
         score -= Math.Max(0, normalized[(root.Length)..].Count(c => c == '/') - 1);
         return score;
     }

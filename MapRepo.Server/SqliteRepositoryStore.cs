@@ -182,8 +182,8 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         }
         if (!string.IsNullOrWhiteSpace(filter?.PathContains))
         {
-            extra.Append(" AND lower(file_path) LIKE '%'||lower($path)||'%'"); extraQualified.Append(" AND lower(s.file_path) LIKE '%'||lower($path)||'%'");
-            extraParameters.Add(("$path", filter!.PathContains));
+            extra.Append(" AND lower(file_path) LIKE '%'||lower($path)||'%' ESCAPE '\\'"); extraQualified.Append(" AND lower(s.file_path) LIKE '%'||lower($path)||'%' ESCAPE '\\'");
+            extraParameters.Add(("$path", EscapeLikePattern(filter!.PathContains)));
         }
         if (filter is { IncludeTextual: false }) { extra.Append(" AND kind<>'textual-evidence'"); extraQualified.Append(" AND s.kind<>'textual-evidence'"); }
 
@@ -224,12 +224,12 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             await using var command = connection.CreateCommand();
             command.CommandText = $"""
                 SELECT {SymbolColumns},
-                       CASE WHEN lower(name) LIKE lower($query)||'%' THEN 60.0
-                            WHEN lower(qualified_name) LIKE '%'||lower($query)||'%' THEN 50.0 ELSE 10.0 END AS score
-                FROM symbols WHERE (name LIKE '%'||$query||'%' OR qualified_name LIKE '%'||$query||'%' OR file_path LIKE '%'||$query||'%'){extra}
+                       CASE WHEN lower(name) LIKE lower($query)||'%' ESCAPE '\' THEN 60.0
+                            WHEN lower(qualified_name) LIKE '%'||lower($query)||'%' ESCAPE '\' THEN 50.0 ELSE 10.0 END AS score
+                FROM symbols WHERE (name LIKE '%'||$query||'%' ESCAPE '\' OR qualified_name LIKE '%'||$query||'%' ESCAPE '\' OR file_path LIKE '%'||$query||'%' ESCAPE '\'){extra}
                 ORDER BY score DESC, length(name), file_path LIMIT $limit
                 """;
-            Add(command, ("$query", query), ("$limit", boundedLimit));
+            Add(command, ("$query", EscapeLikePattern(query)), ("$limit", boundedLimit));
             Add(command, extraParameters.ToArray());
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken)) symbols.Add((ReadSymbol(reader), reader.GetDouble(14)));
@@ -353,9 +353,9 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
     {
         await using var connection = await OpenAsync(repositoryId, cancellationToken);
         await using var command = connection.CreateCommand();
-        var where = string.IsNullOrWhiteSpace(contains) ? string.Empty : " AND lower(file_path) LIKE '%'||lower($contains)||'%'";
+        var where = string.IsNullOrWhiteSpace(contains) ? string.Empty : " AND lower(file_path) LIKE '%'||lower($contains)||'%' ESCAPE '\\'";
         command.CommandText = $"SELECT file_path, count(*), max(language) FROM symbols WHERE kind<>'textual-evidence'{where} GROUP BY file_path ORDER BY file_path LIMIT $limit";
-        if (!string.IsNullOrWhiteSpace(contains)) Add(command, ("$contains", contains));
+        if (!string.IsNullOrWhiteSpace(contains)) Add(command, ("$contains", EscapeLikePattern(contains)));
         Add(command, ("$limit", Math.Clamp(limit, 1, 2000)));
         var files = new List<FileEntry>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
@@ -411,6 +411,11 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             .ToArray();
         return tokens.Length == 0 ? null : string.Join(' ', tokens.Select(t => $"\"{t}\"*"));
     }
+
+    /// <summary>Escapes a LIKE pattern's own wildcard characters so user input like "get_%" or "a\b" is matched
+    /// literally instead of as a wildcard. Pair with `ESCAPE '\'` in the SQL text.</summary>
+    private static string EscapeLikePattern(string value) =>
+        value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
 
     private const string SymbolColumns = "id,repository_id,project,file_path,name,qualified_name,kind,start_line,start_column,end_line,end_column,signature,language,module_id";
     private const string SymbolColumnsQualified = "s.id,s.repository_id,s.project,s.file_path,s.name,s.qualified_name,s.kind,s.start_line,s.start_column,s.end_line,s.end_column,s.signature,s.language,s.module_id";

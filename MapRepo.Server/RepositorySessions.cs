@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Microsoft.Data.Sqlite;
 using MapRepo.Core;
 
 namespace MapRepo.Server;
@@ -25,9 +26,10 @@ public sealed class RepositorySessionManager : IAsyncDisposable
         foreach (var definition in _catalog.All())
         {
             try { await OpenAsync(definition, reindex: false, cancellationToken); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException or InvalidOperationException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException or InvalidOperationException or SqliteException)
             {
-                // A missing path must not stop the server; the repository stays cataloged and can be repaired later.
+                // A missing path or a corrupt database for one repository must not stop the server
+                // from restoring the rest; it stays cataloged and can be repaired/reindexed later.
                 _ = ex;
             }
         }
@@ -123,6 +125,7 @@ public sealed class RepositorySession : IAsyncDisposable
     private readonly IRepositoryStore _store;
     private readonly SemaphoreSlim _indexLock = new(1, 1);
     private readonly object _watchLock = new();
+    private readonly CancellationTokenSource _lifetime = new();
     private FileSystemWatcher? _watcher;
     private Timer? _debounce;
     private readonly HashSet<string> _changed = new(StringComparer.OrdinalIgnoreCase);
@@ -131,6 +134,10 @@ public sealed class RepositorySession : IAsyncDisposable
     private int _indexing;
     private RepositoryStatus? _lastStatus;
     private string? _lastIndexError;
+    private string? _lastWatcherError;
+    // Tracked so DisposeAsync can wait for any in-flight index before disposing _indexLock;
+    // otherwise a background index task holding the semaphore hits ObjectDisposedException on Release().
+    private volatile Task _lastIndexTask = Task.CompletedTask;
 
     public RepositorySession(RepositoryDefinition definition, ModuleRegistry registry, IRepositoryStore store)
     {
@@ -161,10 +168,11 @@ public sealed class RepositorySession : IAsyncDisposable
     private void QueueIndex(IReadOnlyList<string> changedPaths)
     {
         Volatile.Write(ref _indexing, 1);
-        _ = Task.Run(async () =>
+        _lastIndexTask = Task.Run(async () =>
         {
-            try { await IndexAsync(changedPaths, CancellationToken.None); }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            try { await IndexAsync(changedPaths, _lifetime.Token); }
+            catch (OperationCanceledException) { /* session disposed while queued/running */ }
+            catch (Exception ex)
             {
                 _lastIndexError = ex.Message;
                 Volatile.Write(ref _indexing, 0);
@@ -293,23 +301,44 @@ public sealed class RepositorySession : IAsyncDisposable
             IncludeSubdirectories = true,
             NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size,
             Filter = "*.*",
+            // Default 8 KB overflows silently on bulk operations (git checkout, npm install) inside
+            // a watched repo, dropping events with no error — raise it well above the default.
+            InternalBufferSize = 1 << 16,
             EnableRaisingEvents = true
         };
         watcher.Created += OnFileChanged;
         watcher.Changed += OnFileChanged;
         watcher.Renamed += OnFileRenamed;
         watcher.Deleted += OnFileChanged;
+        watcher.Error += OnWatcherError;
         lock (_watchLock) { _watcher = watcher; _debounce = new Timer(_ => DrainChanges(), null, Timeout.Infinite, Timeout.Infinite); }
         Volatile.Write(ref _watcherActive, 1);
     }
 
-    private void OnFileChanged(object sender, FileSystemEventArgs args)
+    private void OnFileChanged(object sender, FileSystemEventArgs args) => Enqueue(args.FullPath);
+
+    // A rename touches two paths: the old one must lose its stale symbols, the new one must be (re)indexed.
+    private void OnFileRenamed(object sender, RenamedEventArgs args)
     {
-        if (!IsInteresting(args.FullPath)) return;
-        lock (_watchLock) { _changed.Add(args.FullPath); _debounce?.Change(750, Timeout.Infinite); }
+        Enqueue(args.OldFullPath);
+        Enqueue(args.FullPath);
     }
 
-    private void OnFileRenamed(object sender, RenamedEventArgs args) => OnFileChanged(sender, args);
+    private void Enqueue(string path)
+    {
+        if (!IsInteresting(path)) return;
+        lock (_watchLock) { _changed.Add(path); _debounce?.Change(750, Timeout.Infinite); }
+    }
+
+    // A dropped/overflowed watcher (buffer overflow, watched directory recreated, etc.) means file
+    // events may have been lost silently. Surface a diagnostic and force a full reindex rather than
+    // trust a _changed set that might be missing entries.
+    private void OnWatcherError(object sender, ErrorEventArgs args)
+    {
+        _lastWatcherError = args.GetException()?.Message ?? "unknown watcher error";
+        lock (_watchLock) { _changed.Clear(); }
+        QueueIndex(Array.Empty<string>());
+    }
 
     private bool IsInteresting(string path)
     {
@@ -331,9 +360,12 @@ public sealed class RepositorySession : IAsyncDisposable
     {
         string[] changes;
         lock (_watchLock) { changes = _changed.ToArray(); _changed.Clear(); }
-        _ = Task.Run(async () =>
+        Volatile.Write(ref _indexing, 1);
+        _lastIndexTask = Task.Run(async () =>
         {
-            try { await IndexAsync(changes); } catch (OperationCanceledException) { } catch (Exception ex) { _lastIndexError = ex.Message; Volatile.Write(ref _indexing, 0); }
+            try { await IndexAsync(changes, _lifetime.Token); }
+            catch (OperationCanceledException) { }
+            catch (Exception ex) { _lastIndexError = ex.Message; Volatile.Write(ref _indexing, 0); }
         });
     }
 
@@ -342,6 +374,7 @@ public sealed class RepositorySession : IAsyncDisposable
         var diagnostics = new List<string>();
         if (!string.IsNullOrWhiteSpace(runtimeDiagnostic)) diagnostics.Add(runtimeDiagnostic);
         if (!string.IsNullOrWhiteSpace(_lastIndexError)) diagnostics.Add($"Last index failed: {_lastIndexError}");
+        if (!string.IsNullOrWhiteSpace(_lastWatcherError)) diagnostics.Add($"Watcher error, forced full reindex: {_lastWatcherError}");
         diagnostics.AddRange(status.Diagnostics);
         return status with { WatcherActive = WatcherActive, Indexing = IsIndexing, Diagnostics = diagnostics.Distinct(StringComparer.Ordinal).Take(200).ToArray() };
     }
@@ -362,7 +395,15 @@ public sealed class RepositorySession : IAsyncDisposable
             _debounce = null;
         }
         Volatile.Write(ref _watcherActive, 0);
+
+        // Ask any in-flight/queued index to cancel, then wait for it to actually finish before
+        // disposing _indexLock — otherwise a background task still holding the semaphore throws
+        // ObjectDisposedException on Release(), which previously got swallowed as _lastIndexError.
+        await _lifetime.CancelAsync();
+        try { await _lastIndexTask.WaitAsync(TimeSpan.FromSeconds(30)); }
+        catch (Exception ex) when (ex is OperationCanceledException or TimeoutException) { }
+
         _indexLock.Dispose();
-        await Task.CompletedTask;
+        _lifetime.Dispose();
     }
 }
