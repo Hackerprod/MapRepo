@@ -70,6 +70,13 @@ public sealed record SearchResult(
     double Score,
     IReadOnlyList<RelationshipRecord> Relationships);
 
+/// <summary>Truncated reflects whether a match beyond the returned page was actually found (one
+/// extra row was fetched and discarded), not just "did the result count happen to equal limit" —
+/// with limit=2 and exactly 2 real matches, the latter heuristic would wrongly claim truncation.</summary>
+public sealed record SearchOutcome(
+    IReadOnlyList<SearchResult> Items,
+    bool Truncated);
+
 public sealed record GraphResult(
     string RepositoryId,
     string Generation,
@@ -156,7 +163,7 @@ public interface IRepositoryStore
     Task ReplaceFilesAsync(string repositoryId, string moduleId, IReadOnlyList<string> filePaths,
         IReadOnlyList<SymbolRecord> symbols, IReadOnlyList<RelationshipRecord> relationships,
         string generation, DateTimeOffset indexedAt, CancellationToken cancellationToken = default);
-    Task<IReadOnlyList<SearchResult>> SearchAsync(string repositoryId, string query, int limit, SearchFilter? filter = null, CancellationToken cancellationToken = default);
+    Task<SearchOutcome> SearchAsync(string repositoryId, string query, int limit, SearchFilter? filter = null, CancellationToken cancellationToken = default);
     Task<GraphResult> GraphAsync(string repositoryId, string symbolId, int depth, int limit, IReadOnlyList<string>? edgeKinds = null, CancellationToken cancellationToken = default);
     Task<RepositoryStatus> StatusAsync(string repositoryId, CancellationToken cancellationToken = default);
     Task<RepositoryOverview> OverviewAsync(string repositoryId, bool includeGenerated = false, CancellationToken cancellationToken = default);
@@ -179,7 +186,11 @@ public sealed record RepositoryStatus(
     DateTimeOffset? LastIndexedAt,
     bool WatcherActive,
     bool Indexing,
-    IReadOnlyList<string> Diagnostics);
+    /// <summary>Actual problems: MSBuild/analysis failures, config issues — things an agent should
+    /// treat as warnings. Purely informational index stats (file/symbol/edge counts) belong in
+    /// <see cref="IndexSummary"/> instead, so this list isn't misread as "something is wrong".</summary>
+    IReadOnlyList<string> Diagnostics,
+    IReadOnlyList<string>? IndexSummary = null);
 
 public sealed record RepositorySummary(
     RepositoryDefinition Definition,

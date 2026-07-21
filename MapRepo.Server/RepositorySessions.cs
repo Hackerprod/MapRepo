@@ -281,10 +281,12 @@ public sealed class RepositorySession : IAsyncDisposable
                 if (pending.Count == 0)
                 {
                     var stored = await _store.StatusAsync(_definition.Id, cancellationToken);
+                    var (incrementalReal, incrementalSummary) = SqliteRepositoryStore.SplitDiagnostics(incrementalDiagnostics);
                     _lastStatus = stored with
                     {
                         WatcherActive = WatcherActive,
-                        Diagnostics = incrementalDiagnostics.Concat(stored.Diagnostics).Distinct(StringComparer.Ordinal).Take(200).ToArray()
+                        Diagnostics = incrementalReal.Concat(stored.Diagnostics).Distinct(StringComparer.Ordinal).Take(200).ToArray(),
+                        IndexSummary = (incrementalSummary ?? []).Concat(stored.IndexSummary ?? []).Distinct(StringComparer.Ordinal).Take(200).ToArray()
                     };
                     return;
                 }
@@ -321,8 +323,12 @@ public sealed class RepositorySession : IAsyncDisposable
                 var fullRun = changedPaths.Count == 0 && ranModuleIds.Length == modules.Count;
                 await _store.ReplaceAsync(new AnalysisSnapshot(_definition.Id, generation, symbols, relationships, diagnostics, indexedAt),
                     fullRun ? null : ranModuleIds, cancellationToken);
+                // StatusAsync re-reads what ReplaceAsync just persisted and splits it into
+                // Diagnostics/IndexSummary — reassigning the raw pre-split `diagnostics` list here
+                // would undo that split (it's exactly how an informational "ts-semantic (full): ..."
+                // line used to end up back in Diagnostics as if it were a warning).
                 var stored = await _store.StatusAsync(_definition.Id, cancellationToken);
-                _lastStatus = stored with { WatcherActive = WatcherActive, Diagnostics = diagnostics };
+                _lastStatus = stored with { WatcherActive = WatcherActive };
             }
             else if (diagnostics.Length > 0)
             {

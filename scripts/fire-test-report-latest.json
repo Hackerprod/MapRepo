@@ -1,0 +1,390 @@
+﻿{
+    "baseUrl":  "http://127.0.0.1:5087",
+    "repositoryId":  "skynet-steam-emulator",
+    "rootPath":  "C:\\SERVER\\SKYNET Steam Emulator",
+    "generatedAt":  "2026-07-21T15:04:46.5382209-07:00",
+    "total":  18,
+    "failed":  0,
+    "critical":  0,
+    "checks":  [
+                   {
+                       "name":  "HTTP health",
+                       "category":  "transport",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  153.7,
+                       "details":  "status=ok",
+                       "data":  null
+                   },
+                   {
+                       "name":  "MCP initialize",
+                       "category":  "transport",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  55.3,
+                       "details":  "protocolVersion=2024-11-05",
+                       "data":  null
+                   },
+                   {
+                       "name":  "MCP tools/list schema",
+                       "category":  "contract",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  12.3,
+                       "details":  "tools=18, missing=, badSchemas=0",
+                       "data":  {
+                                    "tools":  [
+                                                  "open_repository",
+                                                  "list_repositories",
+                                                  "repository_status",
+                                                  "reindex_repository",
+                                                  "close_repository",
+                                                  "exclude_path",
+                                                  "remove_repository",
+                                                  "repo_overview",
+                                                  "search_symbols",
+                                                  "get_symbol",
+                                                  "file_outline",
+                                                  "list_files",
+                                                  "get_source",
+                                                  "batch",
+                                                  "find_callers",
+                                                  "find_callees",
+                                                  "find_references",
+                                                  "get_graph"
+                                              ]
+                                }
+                   },
+                   {
+                       "name":  "open_repository is non-blocking",
+                       "category":  "lifecycle",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  1545,
+                       "details":  "repositoryId=skynet-steam-emulator, watcherActive=True",
+                       "data":  null
+                   },
+                   {
+                       "name":  "repository_status fast and clean",
+                       "category":  "lifecycle",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  24.5,
+                       "details":  "symbols=46846, relationships=81736, indexing=False, diagnostics=0",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "generation":  "20260721213541251",
+                                    "symbols":  46846,
+                                    "relationships":  81736,
+                                    "lastIndexedAt":  "2026-07-21T21:35:41.2512524+00:00",
+                                    "watcherActive":  true,
+                                    "indexing":  false,
+                                    "diagnostics":  [
+
+                                                    ],
+                                    "indexSummary":  [
+                                                         "ts-semantic (full): 28 files, 13837 symbols, 36478 edges"
+                                                     ]
+                                }
+                   },
+                   {
+                       "name":  "list_repositories compact discovery",
+                       "category":  "tokens",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  1045.8,
+                       "details":  "bytes=748, repos=4",
+                       "data":  {
+                                    "bytes":  748,
+                                    "repositories":  4
+                                }
+                   },
+                   {
+                       "name":  "repo_overview latency and isolation",
+                       "category":  "overview",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  19.4,
+                       "details":  "ms=19.4, hasExternal=False, symbols=46846",
+                       "data":  {
+                                    "symbols":  46846,
+                                    "relationships":  81736,
+                                    "hasExternal":  false
+                                }
+                   },
+                   {
+                       "name":  "no files outside repository root",
+                       "category":  "isolation",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  1366,
+                       "details":  "externalFiles=0",
+                       "data":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "search_symbols finds overloaded/same-name methods",
+                       "category":  "accuracy",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  103.1,
+                       "details":  "count=2, lines=8,19",
+                       "data":  [
+                                    {
+                                        "symbol":  {
+                                                       "id":  "1fc23afac5121e1bf6166c15",
+                                                       "name":  "CreateDbContext",
+                                                       "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory.CreateDbContext(string[])",
+                                                       "kind":  "Method",
+                                                       "project":  "SKYNET server",
+                                                       "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                       "startLine":  8,
+                                                       "signature":  "SteamDbContext SteamDbContextFactory.CreateDbContext(string[] args)"
+                                                   },
+                                        "score":  100
+                                    },
+                                    {
+                                        "symbol":  {
+                                                       "id":  "339794370b942dd386110705",
+                                                       "name":  "CreateDbContext",
+                                                       "qualifiedName":  "SKYNET_server.Persistence.DotaDbContextFactory.CreateDbContext(string[])",
+                                                       "kind":  "Method",
+                                                       "project":  "SKYNET server",
+                                                       "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                       "startLine":  19,
+                                                       "signature":  "DotaDbContext DotaDbContextFactory.CreateDbContext(string[] args)"
+                                                   },
+                                        "score":  100
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "file_outline includes every declaration",
+                       "category":  "accuracy",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  19.7,
+                       "details":  "lines=6,8,17,19",
+                       "data":  [
+                                    {
+                                        "id":  "a2bcac639e248879353206f6",
+                                        "name":  "SteamDbContextFactory",
+                                        "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory",
+                                        "kind":  "NamedType",
+                                        "project":  "SKYNET server",
+                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                        "startLine":  6
+                                    },
+                                    {
+                                        "id":  "1fc23afac5121e1bf6166c15",
+                                        "name":  "CreateDbContext",
+                                        "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory.CreateDbContext(string[])",
+                                        "kind":  "Method",
+                                        "project":  "SKYNET server",
+                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                        "startLine":  8,
+                                        "signature":  "SteamDbContext SteamDbContextFactory.CreateDbContext(string[] args)"
+                                    },
+                                    {
+                                        "id":  "7083dd6ec512f1a5f4e95e96",
+                                        "name":  "DotaDbContextFactory",
+                                        "qualifiedName":  "SKYNET_server.Persistence.DotaDbContextFactory",
+                                        "kind":  "NamedType",
+                                        "project":  "SKYNET server",
+                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                        "startLine":  17
+                                    },
+                                    {
+                                        "id":  "339794370b942dd386110705",
+                                        "name":  "CreateDbContext",
+                                        "qualifiedName":  "SKYNET_server.Persistence.DotaDbContextFactory.CreateDbContext(string[])",
+                                        "kind":  "Method",
+                                        "project":  "SKYNET server",
+                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                        "startLine":  19,
+                                        "signature":  "DotaDbContext DotaDbContextFactory.CreateDbContext(string[] args)"
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "search_symbols TypeScript generated property",
+                       "category":  "accuracy",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  6.4,
+                       "details":  "file=SKYNET server/GC/570/generated/dota.ts, line=21057",
+                       "data":  {
+                                    "symbol":  {
+                                                   "id":  "0b491ecce437e8d8462e0e05",
+                                                   "name":  "GCToClientTeamsInfo",
+                                                   "qualifiedName":  "Msg.GCToClientTeamsInfo",
+                                                   "kind":  "property",
+                                                   "filePath":  "SKYNET server/GC/570/generated/dota.ts",
+                                                   "startLine":  21057,
+                                                   "signature":  "GCToClientTeamsInfo: MessageId;"
+                                               },
+                                    "score":  100
+                                }
+                   },
+                   {
+                       "name":  "find_callers returns callable owner",
+                       "category":  "graph",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  57.8,
+                       "details":  "callers=method:Match.matchStateHistory",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "generation":  "20260721213541251",
+                                    "nodes":  [
+                                                  {
+                                                      "id":  "681e53c30da7c8a0d33701ad",
+                                                      "name":  "matchStateHistory",
+                                                      "qualifiedName":  "Match.matchStateHistory",
+                                                      "kind":  "method",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "startLine":  145,
+                                                      "endLine":  153,
+                                                      "signature":  "private matchStateHistory(ctx: RawMessageContext): boolean {"
+                                                  },
+                                                  {
+                                                      "id":  "7862fc5eaac3a4fe8b5e1357",
+                                                      "name":  "summarizeMatchStateHistory",
+                                                      "kind":  "function",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "startLine":  257,
+                                                      "endLine":  289,
+                                                      "signature":  "function summarizeMatchStateHistory("
+                                                  }
+                                              ],
+                                    "edges":  [
+                                                  {
+                                                      "sourceId":  "681e53c30da7c8a0d33701ad",
+                                                      "targetId":  "7862fc5eaac3a4fe8b5e1357",
+                                                      "kind":  "calls",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "lines":  [
+                                                                    147
+                                                                ]
+                                                  }
+                                              ],
+                                    "truncated":  false
+                                }
+                   },
+                   {
+                       "name":  "get_source exact range",
+                       "category":  "source",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  24.5,
+                       "details":  "start=8, end=14, truncated=False",
+                       "data":  null
+                   },
+                   {
+                       "name":  "get_source EOF clamp does not mark truncated",
+                       "category":  "source",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  6,
+                       "details":  "end=26, total=26, truncated=False",
+                       "data":  null
+                   },
+                   {
+                       "name":  "get_source rejects invalid range",
+                       "category":  "source",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  8.2,
+                       "details":  "isError=True",
+                       "data":  null
+                   },
+                   {
+                       "name":  "get_source blocks path traversal",
+                       "category":  "security",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  4.2,
+                       "details":  "isError=True, message=Path escapes the repository root",
+                       "data":  null
+                   },
+                   {
+                       "name":  "batch preserves per-call truncation flags",
+                       "category":  "contract",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  21,
+                       "details":  "first.truncated=False",
+                       "data":  {
+                                    "results":  [
+                                                    {
+                                                        "tool":  "search_symbols",
+                                                        "ok":  true,
+                                                        "result":  {
+                                                                       "items":  [
+                                                                                     {
+                                                                                         "symbol":  {
+                                                                                                        "id":  "1fc23afac5121e1bf6166c15",
+                                                                                                        "name":  "CreateDbContext",
+                                                                                                        "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory.CreateDbContext(string[])",
+                                                                                                        "kind":  "Method",
+                                                                                                        "project":  "SKYNET server",
+                                                                                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                                                                        "startLine":  8,
+                                                                                                        "signature":  "SteamDbContext SteamDbContextFactory.CreateDbContext(string[] args)"
+                                                                                                    },
+                                                                                         "score":  100
+                                                                                     },
+                                                                                     {
+                                                                                         "symbol":  {
+                                                                                                        "id":  "339794370b942dd386110705",
+                                                                                                        "name":  "CreateDbContext",
+                                                                                                        "qualifiedName":  "SKYNET_server.Persistence.DotaDbContextFactory.CreateDbContext(string[])",
+                                                                                                        "kind":  "Method",
+                                                                                                        "project":  "SKYNET server",
+                                                                                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                                                                        "startLine":  19,
+                                                                                                        "signature":  "DotaDbContext DotaDbContextFactory.CreateDbContext(string[] args)"
+                                                                                                    },
+                                                                                         "score":  100
+                                                                                     }
+                                                                                 ],
+                                                                       "truncated":  false
+                                                                   }
+                                                    },
+                                                    {
+                                                        "tool":  "get_source",
+                                                        "ok":  true,
+                                                        "result":  {
+                                                                       "repositoryId":  "skynet-steam-emulator",
+                                                                       "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                                       "startLine":  8,
+                                                                       "endLine":  14,
+                                                                       "totalLines":  26,
+                                                                       "content":  "    public SteamDbContext CreateDbContext(string[] args)\n    {\n        var options = new DbContextOptionsBuilder\u003cSteamDbContext\u003e()\n            .UseSqlite(\"Data Source=Data/steam.db\")\n            .Options;\n        return new SteamDbContext(options);\n    }",
+                                                                       "truncated":  false
+                                                                   }
+                                                    }
+                                                ]
+                                }
+                   },
+                   {
+                       "name":  "literal text search has explicit behavior",
+                       "category":  "tokens",
+                       "passed":  true,
+                       "severity":  "none",
+                       "ms":  1835.5,
+                       "details":  "mcpCount=0, rgCount=21, hasDiagnostic=True",
+                       "data":  {
+                                    "mcp":  {
+                                                "items":  [
+
+                                                          ],
+                                                "truncated":  false,
+                                                "diagnostic":  "textual evidence disabled for this repository (includeTextualEvidence=false at index time); re-register with includeTextualEvidence=true and reindex to search string literals"
+                                            },
+                                    "rgCount":  21
+                                }
+                   }
+               ]
+}

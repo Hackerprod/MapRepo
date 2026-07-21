@@ -125,7 +125,9 @@ app.MapGet("/api/repos/{id}/source", async (string id, string path, int? start, 
 });
 
 app.MapGet("/api/search/{id}", async (string id, string q, int? limit, string? kind, string? path, bool? textual, IRepositoryStore store, CancellationToken ct) =>
-    Results.Ok(await store.SearchAsync(id, q, limit ?? 20, new SearchFilter(kind, path, textual ?? false), ct)));
+    // The UI expects a bare array (see app.js's results.map) — unwrap SearchOutcome rather than
+    // changing the response shape for a viewer that has no use for the truncated flag today.
+    Results.Ok((await store.SearchAsync(id, q, limit ?? 20, new SearchFilter(kind, path, textual ?? false), ct)).Items));
 
 app.MapGet("/api/graph/{id}/{symbolId}", async (string id, string symbolId, int? depth, int? limit, string? kinds, IRepositoryStore store, CancellationToken ct) =>
     Results.Ok(await store.GraphAsync(id, symbolId, depth ?? 2, limit ?? 80,

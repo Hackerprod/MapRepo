@@ -171,14 +171,15 @@ public sealed class McpDispatcher
                 var textualDisabled = wantsTextual && _manager.Definition(searchRepoId)?.IncludeTextualEvidence != true;
                 return new
                 {
-                    items = searchResults.Select(r => new
+                    items = searchResults.Items.Select(r => new
                     {
                         symbol = CompactSymbol(r.Symbol),
                         r.Score,
                         relationships = withRelationships ? CompactEdges(r.Relationships) : null
                     }).ToArray(),
-                    // SearchAsync clamps to 200 internally; a full result set means more may exist. Raise limit to see them.
-                    truncated = searchResults.Count == Math.Clamp(searchLimit, 1, 200),
+                    // Backed by an actual (limit+1)th row found and discarded, not a count==limit
+                    // coincidence — limit=2 against exactly 2 real matches now correctly says false.
+                    truncated = searchResults.Truncated,
                     diagnostic = textualDisabled
                         ? "textual evidence disabled for this repository (includeTextualEvidence=false at index time); re-register with includeTextualEvidence=true and reindex to search string literals"
                         : null

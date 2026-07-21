@@ -174,11 +174,15 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         await transaction.CommitAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<SearchResult>> SearchAsync(string repositoryId, string query, int limit, SearchFilter? filter = null, CancellationToken cancellationToken = default)
+    public async Task<SearchOutcome> SearchAsync(string repositoryId, string query, int limit, SearchFilter? filter = null, CancellationToken cancellationToken = default)
     {
         await using var connection = await OpenAsync(repositoryId, cancellationToken);
         var symbols = new List<(SymbolRecord Symbol, double Score)>();
         var boundedLimit = Math.Clamp(limit, 1, 200);
+        // Fetch one extra row past the requested limit so truncation can be answered from a fact
+        // (an (limit+1)th row actually exists) instead of a coincidence (returned count == limit,
+        // which is also exactly what happens when limit matches the true total with nothing hidden).
+        var fetchLimit = boundedLimit + 1;
         var extra = new StringBuilder();
         var extraQualified = new StringBuilder(); // same predicates with columns qualified as s.* for the FTS join
         var extraParameters = new List<(string, object?)>();
@@ -201,7 +205,7 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
                 FROM symbols WHERE (name=$query COLLATE NOCASE OR qualified_name=$query COLLATE NOCASE){extra}
                 ORDER BY length(name), file_path LIMIT $limit
                 """;
-            Add(exact, ("$query", query.Trim()), ("$limit", boundedLimit));
+            Add(exact, ("$query", query.Trim()), ("$limit", fetchLimit));
             Add(exact, extraParameters.ToArray());
             await using var reader = await exact.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken)) symbols.Add((ReadSymbol(reader), reader.GetDouble(14)));
@@ -220,7 +224,7 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
                 WHERE symbols_fts5 MATCH $match{extraQualified}
                 ORDER BY bm25(symbols_fts5, 0.0, 0.0, 10.0, 4.0, 1.0), length(s.name) LIMIT $limit
                 """;
-            Add(command, ("$match", ftsQuery), ("$limit", boundedLimit));
+            Add(command, ("$match", ftsQuery), ("$limit", fetchLimit));
             Add(command, extraParameters.ToArray());
             try
             {
@@ -239,16 +243,19 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
                 FROM symbols WHERE (name LIKE '%'||$query||'%' ESCAPE '\' OR qualified_name LIKE '%'||$query||'%' ESCAPE '\' OR file_path LIKE '%'||$query||'%' ESCAPE '\'){extra}
                 ORDER BY score DESC, length(name), file_path LIMIT $limit
                 """;
-            Add(command, ("$query", EscapeLikePattern(query)), ("$limit", boundedLimit));
+            Add(command, ("$query", EscapeLikePattern(query)), ("$limit", fetchLimit));
             Add(command, extraParameters.ToArray());
             await using var reader = await command.ExecuteReaderAsync(cancellationToken);
             while (await reader.ReadAsync(cancellationToken)) symbols.Add((ReadSymbol(reader), reader.GetDouble(14)));
         }
+        var truncated = symbols.Count > boundedLimit;
+        if (truncated) symbols.RemoveRange(boundedLimit, symbols.Count - boundedLimit);
         var relationshipsBySymbol = await RelationshipsForManyAsync(connection, symbols.Select(s => s.Symbol.Id), cancellationToken, 24);
-        return symbols
+        var items = symbols
             .Select(item => new SearchResult(item.Symbol, item.Score,
                 relationshipsBySymbol.TryGetValue(item.Symbol.Id, out var relationships) ? relationships : []))
             .ToArray();
+        return new SearchOutcome(items, truncated);
     }
 
     public async Task<GraphResult> GraphAsync(string repositoryId, string symbolId, int depth, int limit, IReadOnlyList<string>? edgeKinds = null, CancellationToken cancellationToken = default)
@@ -291,9 +298,25 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         Add(command, ("$repo", repositoryId));
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         if (!await reader.ReadAsync(cancellationToken)) return new RepositoryStatus(repositoryId, null, 0, 0, null, false, false, []);
-        var diagnostics = reader.IsDBNull(2) ? [] : reader.GetString(2).Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var raw = reader.IsDBNull(2) ? [] : reader.GetString(2).Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var (diagnostics, indexSummary) = SplitDiagnostics(raw);
         return new RepositoryStatus(repositoryId, reader.GetString(0), reader.GetInt32(3), reader.GetInt32(4),
-            DateTimeOffset.TryParse(reader.GetString(1), out var date) ? date : null, false, false, diagnostics);
+            DateTimeOffset.TryParse(reader.GetString(1), out var date) ? date : null, false, false, diagnostics, indexSummary);
+    }
+
+    // A module's own informational summary line ("ts-semantic (full): N files, M symbols, K edges",
+    // "tsconfig: <path>") is not a problem — it always fires, success or not — but it was stored in
+    // the same flat diagnostics list as real MSBuild/analysis failures, so agents kept reading it as
+    // a warning. Split by recognizable prefix instead of touching every module's analysis path.
+    private static readonly string[] InformationalDiagnosticPrefixes = ["ts-semantic (full):", "ts-semantic (incremental):", "tsconfig:"];
+
+    public static (IReadOnlyList<string> Diagnostics, IReadOnlyList<string>? IndexSummary) SplitDiagnostics(IReadOnlyList<string> raw)
+    {
+        var diagnostics = new List<string>();
+        var summary = new List<string>();
+        foreach (var line in raw)
+            (InformationalDiagnosticPrefixes.Any(line.StartsWith) ? summary : diagnostics).Add(line);
+        return (diagnostics, summary.Count > 0 ? summary : null);
     }
 
     // Path-pattern heuristic for tool-generated source (designer files, protobuf/gRPC stubs,
@@ -324,9 +347,13 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             return entries;
         }
 
-        var kinds = await GroupAsync($"SELECT kind,count(*) FROM symbols WHERE 1=1{generatedFilter} GROUP BY kind ORDER BY count(*) DESC LIMIT 30");
-        var languages = await GroupAsync($"SELECT language,count(*) FROM symbols WHERE 1=1{generatedFilter} GROUP BY language ORDER BY count(*) DESC LIMIT 12");
-        var projects = await GroupAsync($"SELECT project,count(*) FROM symbols WHERE 1=1{generatedFilter} GROUP BY project ORDER BY count(*) DESC LIMIT 30");
+        // kinds/languages/projects are cheap unfiltered GROUP BYs (as before includeGenerated
+        // existed) — the reported noise was specifically topFiles/hubs being dominated by
+        // generated code, not these aggregate counts, so only those two pay for the unindexed
+        // NOT LIKE chain (a leading-wildcard LIKE can't use an index either way).
+        var kinds = await GroupAsync("SELECT kind,count(*) FROM symbols GROUP BY kind ORDER BY count(*) DESC LIMIT 30");
+        var languages = await GroupAsync("SELECT language,count(*) FROM symbols GROUP BY language ORDER BY count(*) DESC LIMIT 12");
+        var projects = await GroupAsync("SELECT project,count(*) FROM symbols GROUP BY project ORDER BY count(*) DESC LIMIT 30");
         var edgeKinds = await GroupAsync("SELECT kind,count(*) FROM relationships GROUP BY kind ORDER BY count(*) DESC LIMIT 12");
         var topFiles = await GroupAsync($"SELECT file_path,count(*) FROM symbols WHERE kind<>'textual-evidence'{generatedFilter} GROUP BY file_path ORDER BY count(*) DESC LIMIT 20");
 

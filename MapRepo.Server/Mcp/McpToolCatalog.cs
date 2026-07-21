@@ -25,7 +25,7 @@ public static class McpToolCatalog
         new("list_repositories", "List every registered repository with a compact status (id, rootPath, symbols, relationships, indexing, diagnosticCount). Call this first to discover repositoryId values.", Schema([
             BooleanProperty("includeDiagnostics", "Return the full definition and diagnostics text per repository instead of the compact default. Expensive on repositories with many MSBuild/analysis warnings.")
         ], [])),
-        new("repository_status", "Return index generation, counts, diagnostics and watcher state", RepoSchema()),
+        new("repository_status", "Return index generation, counts, diagnostics and watcher state. diagnostics is actual problems (MSBuild/analysis errors); routine per-module index stats (file/symbol/edge counts) come back separately in indexSummary, not mixed in.", RepoSchema()),
         new("reindex_repository", "Force a full reindex of a registered repository", RepoSchema()),
         new("close_repository", "Stop the watcher and release the in-memory session. Data and registration are kept.", RepoSchema()),
         new("exclude_path", "Add a path substring to a repository's exclude list (on top of the built-in .git/node_modules/bin/obj/dist/build/coverage list) and force a full reindex so previously indexed symbols from that path are purged. Use for project-specific scratch/generated folders that keep polluting search results.", Schema([
