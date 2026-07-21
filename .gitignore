@@ -7,3 +7,5 @@ MapRepo.Server/data-v4/
 .claude
 MapRepo.Server/tools/node_modules/
 MapRepo.Server/tools/package-lock.json
+AGENTS.md
+publish/

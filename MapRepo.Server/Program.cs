@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using MapRepo.Core;
 using MapRepo.Modules.CSharp;
 using MapRepo.Modules.TypeScript;
@@ -14,7 +15,17 @@ var JsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web)
     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
 };
-var builder = WebApplication.CreateBuilder(args);
+// A Windows Service starts with its working directory in System32, not the install folder —
+// pin ContentRootPath to the executable's own folder only in that mode, so data-v4/ and wwwroot/
+// resolve correctly. `dotnet run` and the Scheduled Task launch (which sets "Start in") keep
+// relying on the current directory, unchanged from before.
+var runningAsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = runningAsService ? AppContext.BaseDirectory : null
+});
+builder.Host.UseWindowsService(options => options.ServiceName = "MapRepoServer");
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;

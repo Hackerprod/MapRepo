@@ -38,6 +38,32 @@ Invoke-RestMethod http://127.0.0.1:5087/api/repos/open -Method Post -ContentType
 
 Indexing runs in the background; `GET /api/repos/{id}/status` reports progress. From then on the watcher keeps the index fresh on every save.
 
+## Always-on autostart (Windows)
+
+`dotnet run` dies with the terminal. To keep MapRepo resident on the machine, `scripts/manage-service.ps1` publishes the server and registers it under one of two configurable modes:
+
+| Mode | Starts | Needs admin | Survives logoff |
+| --- | --- | --- | --- |
+| `Logon` | when you log in | no | no — stops at logoff |
+| `Service` | at boot, before login | yes | yes |
+
+```powershell
+# No admin required — starts automatically at your next login:
+.\scripts\manage-service.ps1 -Action Install -Mode Logon
+
+# Run as Administrator — a real Windows Service, starts at boot:
+.\scripts\manage-service.ps1 -Action Install -Mode Service
+
+.\scripts\manage-service.ps1 -Action Status                 # registration + live health check
+.\scripts\manage-service.ps1 -Action Start   -Mode Logon    # or -Mode Service
+.\scripts\manage-service.ps1 -Action Stop
+.\scripts\manage-service.ps1 -Action Uninstall -Mode Logon  # or -Mode Service
+```
+
+`-Port` (default 5087) and `-PublishDir` (default `<repo>\publish`) are configurable on every call; keep `-PublishDir` consistent between Install/Uninstall/Status so the script finds the right executable. The published copy manages its **own** `data-v4/` under `-PublishDir` — independent from a `dotnet run` dev checkout — so registering repositories through the installed instance doesn't touch your dev index and vice versa.
+
+Registering a Scheduled Task for your own account normally needs no elevation; if `Register-ScheduledTask` reports Access Denied anyway, a Group Policy on the machine is restricting Task Scheduler — use `-Mode Service` instead (admin-only, always works). The script fails loudly (non-zero exit, no "installed" message) on any registration error rather than reporting false success.
+
 ## MCP integration
 
 ```json
