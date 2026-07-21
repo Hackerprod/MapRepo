@@ -678,7 +678,10 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             PRAGMA journal_mode=WAL;
             CREATE TABLE IF NOT EXISTS meta(repository_id TEXT PRIMARY KEY,generation TEXT NOT NULL,indexed_at TEXT NOT NULL,diagnostics TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS symbols(id TEXT PRIMARY KEY,repository_id TEXT NOT NULL,project TEXT,file_path TEXT NOT NULL,name TEXT NOT NULL,qualified_name TEXT NOT NULL,kind TEXT NOT NULL,start_line INTEGER NOT NULL,start_column INTEGER NOT NULL,end_line INTEGER NOT NULL,end_column INTEGER NOT NULL,signature TEXT NOT NULL,language TEXT NOT NULL,module_id TEXT NOT NULL);
-            CREATE INDEX IF NOT EXISTS idx_symbols_name ON symbols(name);
+            DROP INDEX IF EXISTS idx_symbols_name;
+            CREATE INDEX idx_symbols_name ON symbols(name COLLATE NOCASE);
+            DROP INDEX IF EXISTS idx_symbols_qualified_name;
+            CREATE INDEX idx_symbols_qualified_name ON symbols(qualified_name COLLATE NOCASE);
             CREATE INDEX IF NOT EXISTS idx_symbols_file ON symbols(file_path);
             CREATE INDEX IF NOT EXISTS idx_symbols_kind ON symbols(kind);
             CREATE TABLE IF NOT EXISTS relationships(id TEXT PRIMARY KEY,repository_id TEXT NOT NULL,source_id TEXT NOT NULL,target_id TEXT NOT NULL,kind TEXT NOT NULL,file_path TEXT NOT NULL,line INTEGER NOT NULL,column_number INTEGER NOT NULL,confidence TEXT NOT NULL,language TEXT NOT NULL,module_id TEXT NOT NULL);

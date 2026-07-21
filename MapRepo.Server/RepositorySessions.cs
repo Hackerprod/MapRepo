@@ -331,7 +331,10 @@ public sealed class RepositorySession : IAsyncDisposable
         if (IsIndexing)
         {
             var cached = _lastStatus ?? new RepositoryStatus(_definition.Id, null, 0, 0, null, WatcherActive, true, []);
-            return WithRuntimeDiagnostics(cached, "Indexing in progress");
+            int pending;
+            lock (_watchLock) { pending = _changed.Count; }
+            var message = pending > 0 ? $"Indexing in progress ({pending} more file(s) queued behind it)" : "Indexing in progress";
+            return WithRuntimeDiagnostics(cached, message);
         }
 
         var status = await _store.StatusAsync(_definition.Id, cancellationToken);
