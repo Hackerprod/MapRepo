@@ -82,23 +82,23 @@ Streamable HTTP, legacy SSE (`/sse` + `/message`) and plain JSON-RPC POST are al
 
 | Tool | Purpose |
 | --- | --- |
-| `open_repository` | Register/open + index + watch. `reindex` forces a rebuild; `includeTextualEvidence` opts into string-literal mining. |
-| `list_repositories` | Registered repositories with status — the discovery entry point. |
+| `open_repository` | Register/open + index + watch. `reindex` forces a rebuild; `includeTextualEvidence` opts into string-literal mining; `allowExternalSymbols` (C# only, default false) opts into indexing sibling projects outside `rootPath` pulled in via `ProjectReference` — otherwise their symbols/edges are dropped to keep each repository's index isolated. |
+| `list_repositories` | Compact status by default (id, rootPath, symbols, relationships, indexing, diagnosticCount) — the discovery entry point. `includeDiagnostics: true` returns the full definition and diagnostic text per repository. |
 | `repository_status` | Generation, counts, diagnostics, watcher/indexing state. |
 | `reindex_repository` | Force a full rebuild. |
 | `close_repository` | Stop the watcher, release memory; data and registration kept. |
 | `remove_repository` | Unregister; `deleteData` also removes the repository's database directory. |
 | `exclude_path` | Add a path substring to a repository's exclude list and purge already-indexed rows matching it immediately — no reindex needed. For scratch/generated folders (`.tmp`, project-specific build-verification directories) that keep polluting search results. |
-| `repo_overview` | Cached orientation map: counts by kind/language/project, edge kinds, top files, hub symbols. |
-| `search_symbols` | Name/path search with `kind` / `pathContains` filters and exact source evidence. |
+| `repo_overview` | Cached-per-generation orientation map: counts by kind/language/project, edge kinds, top files, hub symbols. `includeGenerated: true` includes tool-generated files (designer/`.g.cs`/`.pb.cs`/`AssemblyInfo`/`obj`/`Generated`), excluded by default. |
+| `search_symbols` | Name/path search with `kind` / `pathContains` filters and exact source evidence. `includeTextual: true` against a repository indexed with `includeTextualEvidence: false` returns a `diagnostic` field explaining why nothing textual came back. |
 | `get_symbol` | One symbol with incoming/outgoing edges and neighbor records. |
 | `file_outline` | Every declaration in a file, ordered by line — cheaper than reading the file. |
 | `list_files` | Indexed files with declaration counts. |
-| `get_source` | Exact line range (max 400 lines); path-traversal safe. |
-| `find_callers` / `find_callees` | Semantic call edges around a symbol (SQL-filtered to `calls`). |
+| `get_source` | Exact line range (max 400 lines); path-traversal safe. Errors by default on `startLine > endLine` or `startLine` past EOF — pass `clamp: true` to auto-correct instead. `truncated` means the 400-line window cut off real content, not that you asked for more than the file has. |
+| `find_callers` / `find_callees` | Semantic call edges around a symbol. `find_callers` defaults to `calls`; `find_callees` defaults to `calls`+`constructs` (so `new Foo()` sites count as callees); both accept an `edgeKinds` override. |
 | `find_references` | Reference edges around a symbol. |
 | `get_graph` | Bounded relationship graph; `edgeKinds` restricts traversal (e.g. `["calls"]`). |
-| `batch` | Up to 10 tool calls in one request; per-call errors don't abort the rest. |
+| `batch` | Up to 10 tool calls in one request (~200KB combined response cap, `truncated`/`nextIndex` if hit); per-call errors don't abort the rest. |
 
 ### Token contract
 
