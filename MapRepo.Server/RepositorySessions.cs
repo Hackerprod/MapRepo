@@ -128,8 +128,10 @@ public sealed class RepositorySessionManager : IAsyncDisposable
         return (updated, removed);
     }
 
-    /// <summary>Reads an exact line range from a file inside the repository root. Never leaves the root.</summary>
-    public async Task<SourceSlice> SourceAsync(string id, string relativePath, int startLine, int endLine, CancellationToken cancellationToken = default)
+    /// <summary>Reads an exact line range from a file inside the repository root. Never leaves the root.
+    /// By default rejects a nonsensical range (startLine past endLine, or startLine past EOF) instead of
+    /// silently clamping it to something else; pass clamp=true to restore the lenient best-effort behavior.</summary>
+    public async Task<SourceSlice> SourceAsync(string id, string relativePath, int startLine, int endLine, bool clamp, CancellationToken cancellationToken = default)
     {
         var definition = Definition(id) ?? throw new KeyNotFoundException($"Repository '{id}' is not registered");
         var root = Path.GetFullPath(definition.RootPath);
@@ -138,12 +140,22 @@ public sealed class RepositorySessionManager : IAsyncDisposable
             throw new InvalidOperationException("Path escapes the repository root");
         if (!File.Exists(full)) throw new FileNotFoundException($"File not found: {relativePath}");
         var lines = await File.ReadAllLinesAsync(full, cancellationToken);
+        if (!clamp)
+        {
+            if (startLine > 0 && endLine > 0 && startLine > endLine)
+                throw new InvalidOperationException($"startLine ({startLine}) is greater than endLine ({endLine}); pass clamp=true to auto-correct instead of erroring");
+            if (startLine > lines.Length)
+                throw new InvalidOperationException($"startLine ({startLine}) is past the file's last line ({lines.Length}); pass clamp=true to auto-correct instead of erroring");
+        }
         var start = Math.Clamp(startLine <= 0 ? 1 : startLine, 1, Math.Max(1, lines.Length));
         var requestedEnd = endLine <= 0 ? start + 60 : endLine;
-        var truncated = requestedEnd - start + 1 > 400;
-        var end = Math.Clamp(Math.Min(requestedEnd, start + 399), start, lines.Length);
+        var windowCap = start + 399;
+        // truncated must mean "our per-call window cut off content that actually exists", not "you
+        // asked for more lines than the file has" — the latter isn't us withholding anything.
+        var achievableEnd = Math.Min(requestedEnd, lines.Length);
+        var end = Math.Clamp(Math.Min(requestedEnd, windowCap), start, lines.Length);
         var content = lines.Length == 0 ? string.Empty : string.Join('\n', lines[(start - 1)..end]);
-        return new SourceSlice(definition.Id, relativePath.Replace('\\', '/'), start, end, lines.Length, content, truncated || requestedEnd > lines.Length);
+        return new SourceSlice(definition.Id, relativePath.Replace('\\', '/'), start, end, lines.Length, content, end < achievableEnd);
     }
 
     public async ValueTask DisposeAsync()

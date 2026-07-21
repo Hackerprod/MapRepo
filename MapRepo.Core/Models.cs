@@ -10,7 +10,11 @@ public sealed record RepositoryDefinition(
     /// <summary>Extra path substrings (case-insensitive) to skip during indexing and watching, on
     /// top of the built-in PathExclusions list — e.g. a project-specific build-verification
     /// scratch folder like "verify-build" that isn't one of the universal names.</summary>
-    IReadOnlyList<string>? ExcludedPaths = null);
+    IReadOnlyList<string>? ExcludedPaths = null,
+    /// <summary>When a .sln pulls in a project outside RootPath (a sibling repo referenced via
+    /// ProjectReference), symbols/edges from that project are dropped by default so one repository's
+    /// index never leaks another's files. Set true only when that cross-repo visibility is wanted.</summary>
+    bool AllowExternalSymbols = false);
 
 public sealed record ModuleDescriptor(
     string Id,
@@ -155,7 +159,7 @@ public interface IRepositoryStore
     Task<IReadOnlyList<SearchResult>> SearchAsync(string repositoryId, string query, int limit, SearchFilter? filter = null, CancellationToken cancellationToken = default);
     Task<GraphResult> GraphAsync(string repositoryId, string symbolId, int depth, int limit, IReadOnlyList<string>? edgeKinds = null, CancellationToken cancellationToken = default);
     Task<RepositoryStatus> StatusAsync(string repositoryId, CancellationToken cancellationToken = default);
-    Task<RepositoryOverview> OverviewAsync(string repositoryId, CancellationToken cancellationToken = default);
+    Task<RepositoryOverview> OverviewAsync(string repositoryId, bool includeGenerated = false, CancellationToken cancellationToken = default);
     Task<FileOutline> OutlineAsync(string repositoryId, string filePath, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<FileEntry>> FilesAsync(string repositoryId, string? contains, int limit, CancellationToken cancellationToken = default);
     Task<SymbolDetail?> SymbolAsync(string repositoryId, string symbolId, int limit, CancellationToken cancellationToken = default);

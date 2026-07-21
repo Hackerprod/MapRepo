@@ -19,9 +19,12 @@ public static class McpToolCatalog
             BooleanProperty("reindex", "Force a full reindex even when the stored index is populated."),
             BooleanProperty("includeTextualEvidence", "Also index identifier-like words found in string literals (default false; adds noise, ~30% more rows)."),
             StringProperty("tsEngine", "TypeScript analysis engine: auto (default; semantic when Node+typescript are available), semantic, or syntax."),
-            ArrayProperty("excludedPaths", "Extra path substrings (case-insensitive) to skip during indexing and watching, beyond the built-in .git/node_modules/bin/obj/dist/build/coverage list — e.g. a project-specific build-verification scratch folder.", "string")
+            ArrayProperty("excludedPaths", "Extra path substrings (case-insensitive) to skip during indexing and watching, beyond the built-in .git/node_modules/bin/obj/dist/build/coverage list — e.g. a project-specific build-verification scratch folder.", "string"),
+            BooleanProperty("allowExternalSymbols", "C# only: when the .sln references a project outside rootPath (a sibling repo via ProjectReference), also index its symbols/edges. Default false keeps every repository's index isolated to its own files.")
         ], ["rootPath"])),
-        new("list_repositories", "List every registered repository with its index status. Call this first to discover repositoryId values.", Schema([], [])),
+        new("list_repositories", "List every registered repository with a compact status (id, rootPath, symbols, relationships, indexing, diagnosticCount). Call this first to discover repositoryId values.", Schema([
+            BooleanProperty("includeDiagnostics", "Return the full definition and diagnostics text per repository instead of the compact default. Expensive on repositories with many MSBuild/analysis warnings.")
+        ], [])),
         new("repository_status", "Return index generation, counts, diagnostics and watcher state", RepoSchema()),
         new("reindex_repository", "Force a full reindex of a registered repository", RepoSchema()),
         new("close_repository", "Stop the watcher and release the in-memory session. Data and registration are kept.", RepoSchema()),
@@ -33,7 +36,10 @@ public static class McpToolCatalog
             StringProperty("repositoryId", "Repository id."),
             BooleanProperty("deleteData", "Also delete the per-repository database directory.")
         ], ["repositoryId"])),
-        new("repo_overview", "Token-cheap orientation map: symbol/edge counts by kind, language and project, top files and the most connected hub symbols. Ideal first call on an unknown repository.", RepoSchema()),
+        new("repo_overview", "Token-cheap orientation map: symbol/edge counts by kind, language and project, top files and the most connected hub symbols. Ideal first call on an unknown repository. Cached per index generation, so only the first call after (re)indexing is slow.", Schema([
+            StringProperty("repositoryId", "Repository id."),
+            BooleanProperty("includeGenerated", "Include tool-generated files (designer/.g.cs/.pb.cs/AssemblyInfo/obj) in topFiles and hubs. Default false keeps the orientation map focused on hand-written code.")
+        ], ["repositoryId"])),
         new("search_symbols", "Find symbols with exact source file and line evidence. Supports kind and path filters.", Schema([
             StringProperty("repositoryId", "Repository id."),
             StringProperty("query", "Symbol name or source text to find."),
@@ -57,11 +63,12 @@ public static class McpToolCatalog
             StringProperty("contains", "Optional substring the file path must contain."),
             IntegerProperty("limit", "Maximum file count.")
         ], ["repositoryId"])),
-        new("get_source", "Read an exact line range (max 400 lines) from a repository file. Use after search_symbols/file_outline so only relevant lines are fetched.", Schema([
+        new("get_source", "Read an exact line range (max 400 lines) from a repository file. Use after search_symbols/file_outline so only relevant lines are fetched. Rejects a nonsensical range (startLine>endLine, or startLine past EOF) as an error by default instead of silently returning something else.", Schema([
             StringProperty("repositoryId", "Repository id."),
             StringProperty("filePath", "Repository-relative file path."),
             IntegerProperty("startLine", "1-based first line (default 1)."),
-            IntegerProperty("endLine", "1-based last line (default startLine+60).")
+            IntegerProperty("endLine", "1-based last line (default startLine+60)."),
+            BooleanProperty("clamp", "When true, auto-correct an invalid range (startLine>endLine, or startLine past EOF) instead of returning an error.")
         ], ["repositoryId", "filePath"])),
         new("batch", "Execute up to 10 tool calls in one request (e.g. search_symbols then get_source). Results return in order; a failing call does not abort the rest. The combined response is capped (~200KB) so one batch can't blow past what fits in a reply — if the cap is hit, the response carries truncated:true and nextIndex: resend the remaining calls in a new batch starting at that index.", new
         {
@@ -89,16 +96,15 @@ public static class McpToolCatalog
             required = new[] { "calls" },
             additionalProperties = false
         }),
-        new("find_callers", "Find methods that call a symbol", SymbolLookupSchema()),
-        new("find_callees", "Find symbols called by a method", SymbolLookupSchema()),
+        new("find_callers", "Find methods that call a symbol. Defaults to calls edges; pass edgeKinds to widen (e.g. [\"calls\",\"constructs\"]).", GraphLookupSchema()),
+        new("find_callees", "Find symbols called or constructed by a method. Defaults to calls+constructs edges; pass edgeKinds to narrow or widen further.", GraphLookupSchema()),
         new("find_references", "Find reference edges around a symbol", SymbolLookupSchema()),
         new("get_graph", "Return a bounded symbol graph for Canvas or agent reasoning", GraphLookupSchema())
     ];
 
     private static object RepoSchema() => Schema([StringProperty("repositoryId", "Repository id.")], ["repositoryId"]);
 
-    // find_callers/find_callees/find_references each hard-code their own single edge kind
-    // (calls/calls/references) in the dispatcher — edgeKinds would be a no-op parameter for them.
+    // find_references hard-codes "references" in the dispatcher — edgeKinds would be a no-op there.
     private static object SymbolLookupSchema() => Schema([
         StringProperty("repositoryId", "Repository id."),
         StringProperty("symbolId", "Symbol id from search_symbols or graph results."),

@@ -106,8 +106,8 @@ app.MapGet("/api/repos/{id}/status", async (string id, RepositorySessionManager 
     catch (SqliteException) { return Results.StatusCode(StatusCodes.Status503ServiceUnavailable); }
 });
 
-app.MapGet("/api/repos/{id}/overview", async (string id, IRepositoryStore store, CancellationToken ct) =>
-    Results.Ok(await store.OverviewAsync(id, ct)));
+app.MapGet("/api/repos/{id}/overview", async (string id, bool? includeGenerated, IRepositoryStore store, CancellationToken ct) =>
+    Results.Ok(await store.OverviewAsync(id, includeGenerated ?? false, ct)));
 
 app.MapGet("/api/repos/{id}/files", async (string id, string? contains, int? limit, IRepositoryStore store, CancellationToken ct) =>
     Results.Ok(await store.FilesAsync(id, contains, limit ?? 500, ct)));
@@ -117,7 +117,9 @@ app.MapGet("/api/repos/{id}/outline", async (string id, string path, IRepository
 
 app.MapGet("/api/repos/{id}/source", async (string id, string path, int? start, int? end, RepositorySessionManager manager, CancellationToken ct) =>
 {
-    try { return Results.Ok(await manager.SourceAsync(id, path, start ?? 1, end ?? 0, ct)); }
+    // The UI browses source by clicking around a rendered graph, not composing an exact range up
+    // front, so it opts into the lenient auto-corrected behavior rather than erroring on a stray click.
+    try { return Results.Ok(await manager.SourceAsync(id, path, start ?? 1, end ?? 0, clamp: true, ct)); }
     catch (KeyNotFoundException ex) { return Results.NotFound(new { error = ex.Message }); }
     catch (Exception ex) when (ex is FileNotFoundException or InvalidOperationException) { return Results.BadRequest(new { error = ex.Message }); }
 });

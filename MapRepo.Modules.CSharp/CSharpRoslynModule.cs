@@ -64,7 +64,8 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
                 var compilation = await project.GetCompilationAsync(request.CancellationToken);
                 if (compilation is null) continue;
                 foreach (var document in project.Documents.Where(d => d.FilePath?.EndsWith(".cs", StringComparison.OrdinalIgnoreCase) == true
-                    && !Excluded(d.FilePath, request.Repository.ExcludedPaths)))
+                    && !Excluded(d.FilePath, request.Repository.ExcludedPaths)
+                    && (request.Repository.AllowExternalSymbols || IsUnderRoot(request.Repository.RootPath, d.FilePath!))))
                 {
                     try
                     {
@@ -219,7 +220,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
             var symbol = model.GetDeclaredSymbol(node, request.CancellationToken);
             if (symbol is null || symbol.IsImplicitlyDeclared) continue;
             sourceSymbols[node] = symbol;
-            AddSymbol(symbol, request.Repository.Id, project.Name, file, request.Repository.RootPath, tree, symbols, seenSymbols);
+            AddSymbol(symbol, request.Repository.Id, project.Name, file, request.Repository.RootPath, request.Repository.AllowExternalSymbols, tree, symbols, seenSymbols);
             var parent = model.GetEnclosingSymbol(node.SpanStart, request.CancellationToken);
             if (parent is not null && parent.Kind != SymbolKind.Namespace)
                 AddRelationship(parent, symbol, "contains", file, node.SpanStart, tree, request, relationships, seenRelationships);
@@ -299,11 +300,12 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
     }
 
     private static void AddSymbol(ISymbol symbol, string repositoryId, string project, string file, string rootPath,
-        SyntaxTree tree, List<SymbolRecord> output, HashSet<string> seen)
+        bool allowExternal, SyntaxTree tree, List<SymbolRecord> output, HashSet<string> seen)
     {
         var location = symbol.Locations.FirstOrDefault(l => l.IsInSource);
         if (location is null) return;
         var sourceTree = location.SourceTree ?? tree;
+        if (!allowExternal && !string.IsNullOrWhiteSpace(sourceTree.FilePath) && !IsUnderRoot(rootPath, sourceTree.FilePath)) return;
         if (!TryGetLineSpan(sourceTree, location.SourceSpan, out var span)) return;
         var symbolFile = !string.IsNullOrWhiteSpace(sourceTree.FilePath)
             ? RelativePath(rootPath, sourceTree.FilePath)
@@ -326,6 +328,8 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
         var sourceTree = sourceLocation.SourceTree;
         var targetTree = targetLocation.SourceTree;
         if (sourceTree is null || targetTree is null) return;
+        if (!request.Repository.AllowExternalSymbols &&
+            (!IsUnderRoot(request.Repository.RootPath, sourceTree.FilePath) || !IsUnderRoot(request.Repository.RootPath, targetTree.FilePath))) return;
         if (!TryGetLineSpan(sourceTree, sourceLocation.SourceSpan, out _) ||
             !TryGetLineSpan(targetTree, targetLocation.SourceSpan, out _)) return;
         var sourceId = SymbolId(source, RelativePath(request.Repository.RootPath, sourceTree.FilePath));
@@ -413,7 +417,20 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
     }
 
     private static bool Excluded(string path, IReadOnlyList<string>? extra = null) => PathExclusions.IsExcluded(path, extra);
-    private static string SymbolId(ISymbol symbol, string file) => Hash($"{file}|{symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
+    private static bool IsUnderRoot(string root, string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return false;
+        var normalizedRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var normalizedPath = Path.GetFullPath(path);
+        return normalizedPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase);
+    }
+    // FullyQualifiedFormat's MemberOptions is None: for a member symbol (method/property/field) it
+    // renders only the bare member name, dropping the containing type. Two same-named members in
+    // different classes in the same file then hash to the same id and the second silently vanishes
+    // (seenSymbols/seenRelationships treat it as an already-emitted duplicate). CSharpErrorMessageFormat
+    // includes the containing type for members (it's built for "Type.Member(args)" diagnostic text),
+    // which is what the id actually needs to stay unique.
+    private static string SymbolId(ISymbol symbol, string file) => Hash($"{file}|{symbol.ToDisplayString(SymbolDisplayFormat.CSharpErrorMessageFormat)}");
     private static string CreateGeneration(RepositoryDefinition repository) => Hash($"{repository.Id}|{DateTimeOffset.UtcNow:yyyyMMddHHmm}")[..16];
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant()[..24];
 }

@@ -296,12 +296,22 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             DateTimeOffset.TryParse(reader.GetString(1), out var date) ? date : null, false, false, diagnostics);
     }
 
-    public async Task<RepositoryOverview> OverviewAsync(string repositoryId, CancellationToken cancellationToken = default)
+    // Path-pattern heuristic for tool-generated source (designer files, protobuf/gRPC stubs,
+    // assembly metadata, obj/ build intermediates) that would otherwise dominate topFiles/hubs
+    // with noise nobody hand-wrote. Best-effort by design: it can't see file content, only the path.
+    private const string GeneratedFileFilterSql =
+        " AND file_path NOT LIKE '%.designer.cs' AND file_path NOT LIKE '%.g.cs' AND file_path NOT LIKE '%.g.i.cs'" +
+        " AND file_path NOT LIKE '%.pb.cs' AND file_path NOT LIKE '%AssemblyInfo.cs' AND file_path NOT LIKE '%/obj/%'" +
+        " AND lower(file_path) NOT LIKE '%/generated/%'";
+
+    public async Task<RepositoryOverview> OverviewAsync(string repositoryId, bool includeGenerated = false, CancellationToken cancellationToken = default)
     {
         var status = await StatusAsync(repositoryId, cancellationToken);
-        if (_overviewCache.TryGetValue(repositoryId, out var cached) && cached.Generation == status.Generation && status.Generation is not null)
+        var cacheKey = $"{repositoryId}|{includeGenerated}";
+        if (_overviewCache.TryGetValue(cacheKey, out var cached) && cached.Generation == status.Generation && status.Generation is not null)
             return cached.Value;
         await using var connection = await OpenAsync(repositoryId, cancellationToken);
+        var generatedFilter = includeGenerated ? "" : GeneratedFileFilterSql;
 
         async Task<IReadOnlyList<OverviewEntry>> GroupAsync(string sql)
         {
@@ -314,11 +324,11 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             return entries;
         }
 
-        var kinds = await GroupAsync("SELECT kind,count(*) FROM symbols GROUP BY kind ORDER BY count(*) DESC LIMIT 30");
-        var languages = await GroupAsync("SELECT language,count(*) FROM symbols GROUP BY language ORDER BY count(*) DESC LIMIT 12");
-        var projects = await GroupAsync("SELECT project,count(*) FROM symbols GROUP BY project ORDER BY count(*) DESC LIMIT 30");
+        var kinds = await GroupAsync($"SELECT kind,count(*) FROM symbols WHERE 1=1{generatedFilter} GROUP BY kind ORDER BY count(*) DESC LIMIT 30");
+        var languages = await GroupAsync($"SELECT language,count(*) FROM symbols WHERE 1=1{generatedFilter} GROUP BY language ORDER BY count(*) DESC LIMIT 12");
+        var projects = await GroupAsync($"SELECT project,count(*) FROM symbols WHERE 1=1{generatedFilter} GROUP BY project ORDER BY count(*) DESC LIMIT 30");
         var edgeKinds = await GroupAsync("SELECT kind,count(*) FROM relationships GROUP BY kind ORDER BY count(*) DESC LIMIT 12");
-        var topFiles = await GroupAsync("SELECT file_path,count(*) FROM symbols WHERE kind<>'textual-evidence' GROUP BY file_path ORDER BY count(*) DESC LIMIT 20");
+        var topFiles = await GroupAsync($"SELECT file_path,count(*) FROM symbols WHERE kind<>'textual-evidence'{generatedFilter} GROUP BY file_path ORDER BY count(*) DESC LIMIT 20");
 
         var hubs = new List<HubSymbol>();
         await using (var command = connection.CreateCommand())
@@ -328,7 +338,7 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
                     SELECT source_id AS symbol_id, count(*) AS cnt FROM relationships GROUP BY source_id
                     UNION ALL
                     SELECT target_id, count(*) FROM relationships GROUP BY target_id
-                ) GROUP BY symbol_id ORDER BY degree DESC LIMIT 40
+                ) GROUP BY symbol_id ORDER BY degree DESC LIMIT 80
                 """;
             var degrees = new List<(string Id, int Degree)>();
             await using (var reader = await command.ExecuteReaderAsync(cancellationToken))
@@ -336,16 +346,26 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             var records = await SymbolsByIdsAsync(connection, degrees.Select(d => d.Id), cancellationToken);
             var byId = records.ToDictionary(r => r.Id, StringComparer.Ordinal);
             hubs.AddRange(degrees
-                .Where(d => byId.ContainsKey(d.Id) && byId[d.Id].Kind != "textual-evidence")
+                .Where(d => byId.ContainsKey(d.Id) && byId[d.Id].Kind != "textual-evidence"
+                    && (includeGenerated || !IsGeneratedPath(byId[d.Id].FilePath)))
                 .Take(20)
                 .Select(d => new HubSymbol(byId[d.Id], d.Degree)));
         }
 
         var overview = new RepositoryOverview(repositoryId, status.Generation, status.Symbols, status.Relationships,
             kinds, languages, projects, edgeKinds, topFiles, hubs);
-        _overviewCache[repositoryId] = (status.Generation, overview);
+        _overviewCache[cacheKey] = (status.Generation, overview);
         return overview;
     }
+
+    private static bool IsGeneratedPath(string filePath) =>
+        filePath.EndsWith(".designer.cs", StringComparison.OrdinalIgnoreCase) ||
+        filePath.EndsWith(".g.cs", StringComparison.OrdinalIgnoreCase) ||
+        filePath.EndsWith(".g.i.cs", StringComparison.OrdinalIgnoreCase) ||
+        filePath.EndsWith(".pb.cs", StringComparison.OrdinalIgnoreCase) ||
+        filePath.EndsWith("AssemblyInfo.cs", StringComparison.OrdinalIgnoreCase) ||
+        filePath.Contains("/obj/", StringComparison.OrdinalIgnoreCase) ||
+        filePath.Contains("/generated/", StringComparison.OrdinalIgnoreCase);
 
     public async Task<FileOutline> OutlineAsync(string repositoryId, string filePath, CancellationToken cancellationToken = default)
     {

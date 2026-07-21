@@ -92,7 +92,7 @@ public sealed class McpDispatcher
                 var solution = Optional("solutionPath");
                 var modules = StringArray("enabledModules");
                 var excludedPaths = StringArray("excludedPaths");
-                return await _manager.OpenAsync(new RepositoryDefinition(id ?? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)), root, solution, modules, OptionalBool("includeTextualEvidence", false), Optional("tsEngine"), excludedPaths), OptionalBool("reindex", false), ct);
+                return await _manager.OpenAsync(new RepositoryDefinition(id ?? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)), root, solution, modules, OptionalBool("includeTextualEvidence", false), Optional("tsEngine"), excludedPaths, OptionalBool("allowExternalSymbols", false)), OptionalBool("reindex", false), ct);
             case "exclude_path":
                 var (updatedDefinition, removed) = await _manager.ExcludePathAsync(Required("repositoryId"), Required("path"), ct);
                 return new { updatedDefinition.Id, updatedDefinition.ExcludedPaths, symbolsRemoved = removed };
@@ -131,7 +131,13 @@ public sealed class McpDispatcher
                     note = $"Stopped after {batchResults.Count}/{callArray.Length} call(s): response size budget reached. Resend the remaining calls (starting at index {stoppedAt}) in a new batch."
                 };
             case "list_repositories":
-                return await _manager.ListAsync(ct);
+                var summaries = await _manager.ListAsync(ct);
+                if (OptionalBool("includeDiagnostics", false)) return summaries;
+                return summaries.Select(s => new
+                {
+                    s.Definition.Id, s.Definition.RootPath, s.Status.Symbols, s.Status.Relationships,
+                    s.Status.Indexing, s.Status.WatcherActive, diagnosticCount = s.Status.Diagnostics.Count
+                }).ToArray();
             case "repository_status":
                 var statusId = Required("repositoryId");
                 if (_manager.Definition(statusId) is null) throw new KeyNotFoundException($"Repository '{statusId}' is not registered");
@@ -145,7 +151,7 @@ public sealed class McpDispatcher
             case "remove_repository":
                 return new { removed = await _manager.RemoveAsync(Required("repositoryId"), OptionalBool("deleteData", false), ct) };
             case "repo_overview":
-                var overview = await _store.OverviewAsync(Required("repositoryId"), ct);
+                var overview = await _store.OverviewAsync(Required("repositoryId"), OptionalBool("includeGenerated", false), ct);
                 return new
                 {
                     overview.RepositoryId, overview.Generation, overview.Symbols, overview.Relationships,
@@ -154,9 +160,15 @@ public sealed class McpDispatcher
                 };
             case "search_symbols":
                 var searchLimit = OptionalInt("limit", 20);
-                var searchResults = await _store.SearchAsync(Required("repositoryId"), Required("query"), searchLimit,
-                    new SearchFilter(Optional("kind"), Optional("pathContains"), OptionalBool("includeTextual", false)), ct);
+                var searchRepoId = Required("repositoryId");
+                var wantsTextual = OptionalBool("includeTextual", false);
+                var searchResults = await _store.SearchAsync(searchRepoId, Required("query"), searchLimit,
+                    new SearchFilter(Optional("kind"), Optional("pathContains"), wantsTextual), ct);
                 var withRelationships = OptionalBool("includeRelationships", false);
+                // includeTextual only ever returns anything if the repository was indexed with
+                // includeTextualEvidence=true; silently returning zero textual hits otherwise reads
+                // exactly like "your text isn't in the code", which is misleading — say so instead.
+                var textualDisabled = wantsTextual && _manager.Definition(searchRepoId)?.IncludeTextualEvidence != true;
                 return new
                 {
                     items = searchResults.Select(r => new
@@ -166,7 +178,10 @@ public sealed class McpDispatcher
                         relationships = withRelationships ? CompactEdges(r.Relationships) : null
                     }).ToArray(),
                     // SearchAsync clamps to 200 internally; a full result set means more may exist. Raise limit to see them.
-                    truncated = searchResults.Count == Math.Clamp(searchLimit, 1, 200)
+                    truncated = searchResults.Count == Math.Clamp(searchLimit, 1, 200),
+                    diagnostic = textualDisabled
+                        ? "textual evidence disabled for this repository (includeTextualEvidence=false at index time); re-register with includeTextualEvidence=true and reindex to search string literals"
+                        : null
                 };
             case "get_symbol":
                 // Hub symbols can have hundreds of edges; default kept modest so one call doesn't
@@ -192,17 +207,20 @@ public sealed class McpDispatcher
                 var files = await _store.FilesAsync(Required("repositoryId"), Optional("contains"), filesLimit, ct);
                 return new { items = files, truncated = files.Count == Math.Clamp(filesLimit, 1, 2000) };
             case "get_source":
-                return await _manager.SourceAsync(Required("repositoryId"), Required("filePath"), OptionalInt("startLine", 1), OptionalInt("endLine", 0), ct);
+                return await _manager.SourceAsync(Required("repositoryId"), Required("filePath"), OptionalInt("startLine", 1), OptionalInt("endLine", 0), OptionalBool("clamp", false), ct);
             case "find_callers":
             case "find_callees":
             case "find_references":
             case "get_graph":
-                // find_* only ever need one edge kind: filter in SQL so the node/edge budget is spent on relevant rows.
+                // find_callers/find_callees filter in SQL so the node/edge budget is spent on relevant
+                // rows, but still honor an explicit edgeKinds override (e.g. find_callees +
+                // constructs, to see `new Foo()` construction sites alongside plain calls).
                 var requestedKinds = args.TryGetProperty("edgeKinds", out var kindsValue) && kindsValue.ValueKind == JsonValueKind.Array
                     ? kindsValue.EnumerateArray().Select(x => x.GetString()!).ToArray() : null;
                 string[]? kinds = tool switch
                 {
-                    "find_callers" or "find_callees" => ["calls"],
+                    "find_callers" => requestedKinds ?? ["calls"],
+                    "find_callees" => requestedKinds ?? ["calls", "constructs"],
                     "find_references" => ["references"],
                     _ => requestedKinds
                 };
@@ -210,10 +228,11 @@ public sealed class McpDispatcher
                 if (tool == "get_graph")
                     return new { graph.RepositoryId, graph.Generation, nodes = graph.Nodes.Select(CompactSymbol).ToArray(), edges = CompactEdges(graph.Edges), graph.Truncated };
                 var rootId = args.GetProperty("symbolId").GetString()!;
+                var callEdgeKinds = (kinds ?? ["calls"]).ToHashSet(StringComparer.Ordinal);
                 var edges = tool switch
                 {
-                    "find_callers" => graph.Edges.Where(e => e.Kind == "calls" && e.TargetId == rootId).ToArray(),
-                    "find_callees" => graph.Edges.Where(e => e.Kind == "calls" && e.SourceId == rootId).ToArray(),
+                    "find_callers" => graph.Edges.Where(e => callEdgeKinds.Contains(e.Kind) && e.TargetId == rootId).ToArray(),
+                    "find_callees" => graph.Edges.Where(e => callEdgeKinds.Contains(e.Kind) && e.SourceId == rootId).ToArray(),
                     _ => graph.Edges.Where(e => e.Kind == "references" && (e.SourceId == rootId || e.TargetId == rootId)).ToArray()
                 };
                 var involved = edges.SelectMany(e => new[] { e.SourceId, e.TargetId }).Append(rootId).ToHashSet(StringComparer.Ordinal);

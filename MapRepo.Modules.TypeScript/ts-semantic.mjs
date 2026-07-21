@@ -87,6 +87,10 @@ const DECL_KINDS = new Map([
   [ts.SyntaxKind.EnumMember, 'enum-member'], [ts.SyntaxKind.ModuleDeclaration, 'namespace'],
   [ts.SyntaxKind.VariableDeclaration, 'variable']
 ]);
+// Declaration kinds that can actually own a "calls"/"constructs"/"references" edge as its source.
+// Everything else in DECL_KINDS (variable, property, class, interface, ...) is a container a call
+// can textually sit inside but never a thing that itself "calls" something.
+const CALLABLE_DECL_KINDS = new Set(['function', 'method', 'constructor', 'getter', 'setter']);
 
 function declName(node) {
   if (node.name) {
@@ -219,9 +223,18 @@ function analyzeTargets(targetFiles) {
         signature: file, language: language(file), moduleId: MODULE_ID
       });
     }
+    // The edge SOURCE for calls/constructs/references must be a callable owner, not just the
+    // nearest named declaration: a call inside `const summary = compute(...)` sits directly under
+    // a VariableDeclaration node, so stopping at the first DECL_KINDS ancestor (enclosingDecl)
+    // reports the local variable "summary" as the caller instead of the enclosing function/method.
+    // Walk past non-callable containers (variable, property, class, ...) until a real callable is
+    // found, falling back to the module symbol for genuinely top-level module-scope calls.
     const enclosingIdOf = node => {
-      const d = enclosingDecl(node);
-      return d ? symbolIdFor(d, sf) : moduleSymbolId;
+      for (let n = node.parent; n; n = n.parent) {
+        if (DECL_KINDS.has(n.kind) && declName(n) && CALLABLE_DECL_KINDS.has(DECL_KINDS.get(n.kind)))
+          return symbolIdFor(n, sf);
+      }
+      return moduleSymbolId;
     };
 
     const visit = node => {
