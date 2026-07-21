@@ -714,7 +714,9 @@ async function applyDeepLink() {
   $('query').value = q;
   await search();
   const first = document.querySelector('#results .result');
-  if (first) loadGraph(first.dataset.id, first.dataset.name);
+  if (first) await loadGraph(first.dataset.id, first.dataset.name);
+  const dist = parseFloat(params.get('dist'));
+  if (dist > 0) { autoFit = false; cam.targetDist = Math.max(220, Math.min(3200, dist)); }
 }
 
 /* ── Boot ───────────────────────────────────────────────── */
