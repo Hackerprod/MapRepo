@@ -1,0 +1,1380 @@
+﻿{
+    "baseUrl":  "http://127.0.0.1:5087",
+    "repositoryId":  "skynet-steam-emulator",
+    "generatedAt":  "2026-07-21T15:23:48.2306129-07:00",
+    "total":  38,
+    "failed":  0,
+    "critical":  0,
+    "high":  0,
+    "checks":  [
+                   {
+                       "name":  "health endpoint",
+                       "category":  "transport",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  103.6,
+                       "details":  "status=ok",
+                       "data":  null
+                   },
+                   {
+                       "name":  "info endpoint",
+                       "category":  "transport",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  13.7,
+                       "details":  "service=map-repo-server",
+                       "data":  null
+                   },
+                   {
+                       "name":  "initialize protocol",
+                       "category":  "transport",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  36.8,
+                       "details":  "protocol=2024-11-05",
+                       "data":  null
+                   },
+                   {
+                       "name":  "tools/list shape and schemas",
+                       "category":  "contract",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  12.8,
+                       "details":  "tools=18, bad=0, missing=",
+                       "data":  {
+                                    "names":  [
+                                                  "open_repository",
+                                                  "list_repositories",
+                                                  "repository_status",
+                                                  "reindex_repository",
+                                                  "close_repository",
+                                                  "exclude_path",
+                                                  "remove_repository",
+                                                  "repo_overview",
+                                                  "search_symbols",
+                                                  "get_symbol",
+                                                  "file_outline",
+                                                  "list_files",
+                                                  "get_source",
+                                                  "batch",
+                                                  "find_callers",
+                                                  "find_callees",
+                                                  "find_references",
+                                                  "get_graph"
+                                              ]
+                                }
+                   },
+                   {
+                       "name":  "open_repository reuses index fast",
+                       "category":  "lifecycle",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  27.7,
+                       "details":  "repo=skynet-steam-emulator, ms=27.7, watcher=True",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "generation":  "20260721222315821",
+                                    "symbols":  46846,
+                                    "relationships":  85021,
+                                    "lastIndexedAt":  "2026-07-21T22:23:15.8218842+00:00",
+                                    "watcherActive":  true,
+                                    "indexing":  false,
+                                    "diagnostics":  [
+
+                                                    ],
+                                    "indexSummary":  [
+                                                         "ts-semantic (full): 28 files, 13837 symbols, 39763 edges"
+                                                     ]
+                                }
+                   },
+                   {
+                       "name":  "repository_status compact and clean",
+                       "category":  "lifecycle",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  12.9,
+                       "details":  "symbols=46846, edges=85021, diagnostics=0",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "generation":  "20260721222315821",
+                                    "symbols":  46846,
+                                    "relationships":  85021,
+                                    "lastIndexedAt":  "2026-07-21T22:23:15.8218842+00:00",
+                                    "watcherActive":  true,
+                                    "indexing":  false,
+                                    "diagnostics":  [
+
+                                                    ],
+                                    "indexSummary":  [
+                                                         "ts-semantic (full): 28 files, 13837 symbols, 39763 edges"
+                                                     ]
+                                }
+                   },
+                   {
+                       "name":  "list_repositories budget",
+                       "category":  "tokens",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  1383.8,
+                       "details":  "repos=4, bytes=748, ms=1383.8",
+                       "data":  null
+                   },
+                   {
+                       "name":  "repo_overview budget and isolation",
+                       "category":  "overview",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  13.9,
+                       "details":  "symbols=46846, ms=13.9, external=False",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "generation":  "20260721222315821",
+                                    "symbols":  46846,
+                                    "relationships":  85021,
+                                    "kinds":  [
+                                                  {
+                                                      "key":  "Method",
+                                                      "count":  15912
+                                                  },
+                                                  {
+                                                      "key":  "property",
+                                                      "count":  9661
+                                                  },
+                                                  {
+                                                      "key":  "Property",
+                                                      "count":  9058
+                                                  },
+                                                  {
+                                                      "key":  "Field",
+                                                      "count":  5257
+                                                  },
+                                                  {
+                                                      "key":  "NamedType",
+                                                      "count":  2782
+                                                  },
+                                                  {
+                                                      "key":  "interface",
+                                                      "count":  2160
+                                                  },
+                                                  {
+                                                      "key":  "variable",
+                                                      "count":  1282
+                                                  },
+                                                  {
+                                                      "key":  "method",
+                                                      "count":  421
+                                                  },
+                                                  {
+                                                      "key":  "function",
+                                                      "count":  243
+                                                  },
+                                                  {
+                                                      "key":  "class",
+                                                      "count":  31
+                                                  },
+                                                  {
+                                                      "key":  "module",
+                                                      "count":  28
+                                                  },
+                                                  {
+                                                      "key":  "type",
+                                                      "count":  6
+                                                  },
+                                                  {
+                                                      "key":  "constructor",
+                                                      "count":  5
+                                                  }
+                                              ],
+                                    "languages":  [
+                                                      {
+                                                          "key":  "csharp",
+                                                          "count":  33009
+                                                      },
+                                                      {
+                                                          "key":  "typescript",
+                                                          "count":  13742
+                                                      },
+                                                      {
+                                                          "key":  "javascript",
+                                                          "count":  95
+                                                      }
+                                                  ],
+                                    "projects":  [
+                                                     {
+                                                         "key":  "SKYNET server",
+                                                         "count":  33009
+                                                     },
+                                                     {
+                                                         "key":  "(none)",
+                                                         "count":  13837
+                                                     }
+                                                 ],
+                                    "edgeKinds":  [
+                                                      {
+                                                          "key":  "contains",
+                                                          "count":  46623
+                                                      },
+                                                      {
+                                                          "key":  "references",
+                                                          "count":  33402
+                                                      },
+                                                      {
+                                                          "key":  "calls",
+                                                          "count":  4547
+                                                      },
+                                                      {
+                                                          "key":  "constructs",
+                                                          "count":  373
+                                                      },
+                                                      {
+                                                          "key":  "imports",
+                                                          "count":  62
+                                                      },
+                                                      {
+                                                          "key":  "implements",
+                                                          "count":  14
+                                                      }
+                                                  ],
+                                    "topFiles":  [
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/framework/gc.ts",
+                                                         "count":  985
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/Models/SteamApiModels.cs",
+                                                         "count":  475
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/Services/DotaStatsStore.cs",
+                                                         "count":  444
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/modules/Lobby.ts",
+                                                         "count":  398
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/Services/GameCoordinator/GameCoordinatorScriptPlugin.cs",
+                                                         "count":  338
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/Persistence/Entities.cs",
+                                                         "count":  180
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/modules/Profile.ts",
+                                                         "count":  158
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/modules/Party.ts",
+                                                         "count":  114
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/Services/DotaGuildStore.cs",
+                                                         "count":  107
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/modules/Guilds.ts",
+                                                         "count":  103
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/Services/DotaPartyStore.cs",
+                                                         "count":  82
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/modules/Chat.ts",
+                                                         "count":  80
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/modules/Teams.ts",
+                                                         "count":  79
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/modules/Items.ts",
+                                                         "count":  71
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/modules/Stats.ts",
+                                                         "count":  70
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/Services/SteamApiStateService.DotaCosmetics.cs",
+                                                         "count":  68
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/Services/GameCoordinator/GcScriptSelfCheck.cs",
+                                                         "count":  54
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/Services/SteamApiStateService.Helpers.cs",
+                                                         "count":  54
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/modules/InventorySos.ts",
+                                                         "count":  52
+                                                     },
+                                                     {
+                                                         "key":  "SKYNET server/GC/570/modules/Match.ts",
+                                                         "count":  51
+                                                     }
+                                                 ],
+                                    "hubs":  [
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "c5b87f3c89d375f1895757e4",
+                                                                    "name":  "Add",
+                                                                    "qualifiedName":  "SKYNET_server.Services.DotaStatsStore.Add(Microsoft.Data.Sqlite.SqliteCommand, string, object?)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/DotaStatsStore.cs",
+                                                                    "startLine":  3248,
+                                                                    "signature":  "void DotaStatsStore.Add(SqliteCommand command, string name, object? value)"
+                                                                },
+                                                     "degree":  689
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "d0ea4428535d13d67377bab3",
+                                                                    "name":  "SteamApiStateService",
+                                                                    "qualifiedName":  "SKYNET_server.Services.SteamApiStateService",
+                                                                    "kind":  "NamedType",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/SteamApiStateService.cs",
+                                                                    "startLine":  11
+                                                                },
+                                                     "degree":  417
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "c670ace33d9728f9d8e1b519",
+                                                                    "name":  "U32",
+                                                                    "qualifiedName":  "SKYNET_server.Services.DotaStatsStore.U32(Microsoft.Data.Sqlite.SqliteDataReader, string)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/DotaStatsStore.cs",
+                                                                    "startLine":  3290,
+                                                                    "signature":  "uint DotaStatsStore.U32(SqliteDataReader reader, string name)"
+                                                                },
+                                                     "degree":  337
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "d1efae0228e25bd7215a8870",
+                                                                    "name":  "ScriptExchangeHost",
+                                                                    "qualifiedName":  "SKYNET_server.Services.ScriptExchangeHost",
+                                                                    "kind":  "NamedType",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/GameCoordinator/GameCoordinatorScriptPlugin.cs",
+                                                                    "startLine":  936
+                                                                },
+                                                     "degree":  269
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "58f053194a5f65826b67c73a",
+                                                                    "name":  "gc.ts",
+                                                                    "qualifiedName":  "SKYNET server/GC/570/framework/gc.ts",
+                                                                    "kind":  "module",
+                                                                    "filePath":  "SKYNET server/GC/570/framework/gc.ts",
+                                                                    "startLine":  1,
+                                                                    "endLine":  1726,
+                                                                    "signature":  "SKYNET server/GC/570/framework/gc.ts"
+                                                                },
+                                                     "degree":  269
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "95be6e8d9fe709efb43182a7",
+                                                                    "name":  "Run",
+                                                                    "qualifiedName":  "SKYNET_server.Services.GcScriptSelfCheck.Run(System.Action\u003cstring\u003e)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/GameCoordinator/GcScriptSelfCheck.cs",
+                                                                    "startLine":  12,
+                                                                    "signature":  "bool GcScriptSelfCheck.Run(Action\u003cstring\u003e write)"
+                                                                },
+                                                     "degree":  224
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "ba6cb3a8e6c5870bf1e43868",
+                                                                    "name":  "RequireCurrent",
+                                                                    "qualifiedName":  "SKYNET_server.Services.ScriptHostDispatcher.RequireCurrent()",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/GameCoordinator/GameCoordinatorScriptPlugin.cs",
+                                                                    "startLine":  395,
+                                                                    "signature":  "ScriptExchangeHost ScriptHostDispatcher.RequireCurrent()"
+                                                                },
+                                                     "degree":  216
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "ba9c6389e0ec77b429e64b63",
+                                                                    "name":  "ReadMatchPlayer",
+                                                                    "qualifiedName":  "SKYNET_server.Services.DotaStatsStore.ReadMatchPlayer(Microsoft.Data.Sqlite.SqliteDataReader)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/DotaStatsStore.cs",
+                                                                    "startLine":  3018,
+                                                                    "signature":  "DotaStatsMatchPlayer DotaStatsStore.ReadMatchPlayer(SqliteDataReader reader)"
+                                                                },
+                                                     "degree":  202
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "f740eb25c06611ca9d73fafc",
+                                                                    "name":  "BuildSnapshot",
+                                                                    "qualifiedName":  "SKYNET_server.Persistence.StatePersistence.BuildSnapshot(SKYNET_server.Models.ApiState, bool)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Persistence/StatePersistence.cs",
+                                                                    "startLine":  39,
+                                                                    "signature":  "StateSnapshot StatePersistence.BuildSnapshot(ApiState state, bool includeCatalog)"
+                                                                },
+                                                     "degree":  189
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "8ef7a6a24bc756ae1b6c2157",
+                                                                    "name":  "BuildSampleState",
+                                                                    "qualifiedName":  "SKYNET_server.Persistence.PersistenceRoundTripCheck.BuildSampleState()",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Persistence/PersistenceRoundTripCheck.cs",
+                                                                    "startLine":  56,
+                                                                    "signature":  "ApiState PersistenceRoundTripCheck.BuildSampleState()"
+                                                                },
+                                                     "degree":  179
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "4e35d61162af62d7927f75f1",
+                                                                    "name":  "ToTsUInt32",
+                                                                    "qualifiedName":  "SKYNET_server.Services.ScriptExchangeHost.ToTsUInt32(uint)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/GameCoordinator/GameCoordinatorScriptPlugin.cs",
+                                                                    "startLine":  3733,
+                                                                    "signature":  "TsValue ScriptExchangeHost.ToTsUInt32(uint value)"
+                                                                },
+                                                     "degree":  179
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "38ba62e8dccd41d7a00b3fb4",
+                                                                    "name":  "DotaStatsStore",
+                                                                    "qualifiedName":  "SKYNET_server.Services.DotaStatsStore",
+                                                                    "kind":  "NamedType",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/DotaStatsStore.cs",
+                                                                    "startLine":  5
+                                                                },
+                                                     "degree":  178
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "03a3a82a947661a00db28eac",
+                                                                    "name":  "Load",
+                                                                    "qualifiedName":  "SKYNET_server.Persistence.StatePersistence.Load(SKYNET_server.Persistence.SteamDbContext, SKYNET_server.Persistence.DotaDbContext)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Persistence/StatePersistence.cs",
+                                                                    "startLine":  411,
+                                                                    "signature":  "ApiState StatePersistence.Load(SteamDbContext steam, DotaDbContext dota)"
+                                                                },
+                                                     "degree":  172
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "6c46077f952921149ca4da66",
+                                                                    "name":  "ToNumber",
+                                                                    "qualifiedName":  "SKYNET_server.Services.ScriptExchangeHost.ToNumber(TypeSharp.VM.Memory.TsValue, string)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/GameCoordinator/GameCoordinatorScriptPlugin.cs",
+                                                                    "startLine":  3936,
+                                                                    "signature":  "double ScriptExchangeHost.ToNumber(TsValue value, string path = \"value\")"
+                                                                },
+                                                     "degree":  153
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "e6df494d5c9eeea4a2a43b48",
+                                                                    "name":  "Lobby.ts",
+                                                                    "qualifiedName":  "SKYNET server/GC/570/modules/Lobby.ts",
+                                                                    "kind":  "module",
+                                                                    "filePath":  "SKYNET server/GC/570/modules/Lobby.ts",
+                                                                    "startLine":  1,
+                                                                    "endLine":  1993,
+                                                                    "signature":  "SKYNET server/GC/570/modules/Lobby.ts"
+                                                                },
+                                                     "degree":  147
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "fc513a08184afc14ec665331",
+                                                                    "name":  "ExpectResponse",
+                                                                    "qualifiedName":  "SKYNET_server.Services.GcScriptSelfCheck.ExpectResponse(SKYNET_server.Services.GameCoordinatorScriptPlugin, SKYNET_server.Services.GameCoordinatorContext, uint, uint, int, System.Action\u003cstring\u003e)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/GameCoordinator/GcScriptSelfCheck.cs",
+                                                                    "startLine":  214,
+                                                                    "signature":  "bool GcScriptSelfCheck.ExpectResponse(GameCoordinatorScriptPlugin plugin, GameCoordinatorContext context, uint requestType, uint expectedResponseType, int expectedCount, Action\u003cstring\u003e write)"
+                                                                },
+                                                     "degree":  139
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "880bd912f62ad931a7f8196c",
+                                                                    "name":  "jquery.validate.unobtrusive.js",
+                                                                    "qualifiedName":  "SKYNET server/wwwroot/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js",
+                                                                    "kind":  "module",
+                                                                    "filePath":  "SKYNET server/wwwroot/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js",
+                                                                    "startLine":  1,
+                                                                    "endLine":  436,
+                                                                    "signature":  "SKYNET server/wwwroot/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"
+                                                                },
+                                                     "degree":  123
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "fc68515c35431ef30483d7c0",
+                                                                    "name":  "Add",
+                                                                    "qualifiedName":  "SKYNET_server.Services.DotaPartyStore.Add(Microsoft.Data.Sqlite.SqliteCommand, string, object?)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/DotaPartyStore.cs",
+                                                                    "startLine":  805,
+                                                                    "signature":  "void DotaPartyStore.Add(SqliteCommand command, string name, object? value)"
+                                                                },
+                                                     "degree":  121
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "71cda4a57018268a7d3d456e",
+                                                                    "name":  "HandlerContext",
+                                                                    "kind":  "interface",
+                                                                    "filePath":  "SKYNET server/GC/570/framework/gc.ts",
+                                                                    "startLine":  19,
+                                                                    "endLine":  32,
+                                                                    "signature":  "export interface HandlerContext\u003cTRequest, TResponse\u003e {"
+                                                                },
+                                                     "degree":  117
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "249913ff2937f7d3b5a8c71d",
+                                                                    "name":  "ReadGlobalStats",
+                                                                    "qualifiedName":  "SKYNET_server.Services.DotaStatsStore.ReadGlobalStats(Microsoft.Data.Sqlite.SqliteConnection, uint, Microsoft.Data.Sqlite.SqliteTransaction?)",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/DotaStatsStore.cs",
+                                                                    "startLine":  2172,
+                                                                    "signature":  "DotaStatsGlobalStats? DotaStatsStore.ReadGlobalStats(SqliteConnection connection, uint accountId, SqliteTransaction? transaction = null)"
+                                                                },
+                                                     "degree":  117
+                                                 }
+                                             ]
+                                }
+                   },
+                   {
+                       "name":  "no parent-relative files indexed",
+                       "category":  "isolation",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  25.9,
+                       "details":  "parentRelativeFiles=0",
+                       "data":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "no absolute-path files indexed",
+                       "category":  "isolation",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  21.7,
+                       "details":  "absoluteFiles=0",
+                       "data":  [
+
+                                ]
+                   },
+                   {
+                       "name":  "search C# same-name methods",
+                       "category":  "accuracy",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  72.6,
+                       "details":  "count=2, lines=8,19",
+                       "data":  [
+                                    {
+                                        "symbol":  {
+                                                       "id":  "1fc23afac5121e1bf6166c15",
+                                                       "name":  "CreateDbContext",
+                                                       "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory.CreateDbContext(string[])",
+                                                       "kind":  "Method",
+                                                       "project":  "SKYNET server",
+                                                       "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                       "startLine":  8,
+                                                       "signature":  "SteamDbContext SteamDbContextFactory.CreateDbContext(string[] args)"
+                                                   },
+                                        "score":  100
+                                    },
+                                    {
+                                        "symbol":  {
+                                                       "id":  "339794370b942dd386110705",
+                                                       "name":  "CreateDbContext",
+                                                       "qualifiedName":  "SKYNET_server.Persistence.DotaDbContextFactory.CreateDbContext(string[])",
+                                                       "kind":  "Method",
+                                                       "project":  "SKYNET server",
+                                                       "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                       "startLine":  19,
+                                                       "signature":  "DotaDbContext DotaDbContextFactory.CreateDbContext(string[] args)"
+                                                   },
+                                        "score":  100
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "search C# class",
+                       "category":  "accuracy",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  4,
+                       "details":  "file=SKYNET server/Certificate/NetworkingCertManager.cs, line=63",
+                       "data":  {
+                                    "symbol":  {
+                                                   "id":  "2247ffad0368fb6a30083323",
+                                                   "name":  "SteamDatagramCertificateMessage",
+                                                   "qualifiedName":  "SKYNET_server.Certificate.SteamDatagramCertificateMessage",
+                                                   "kind":  "NamedType",
+                                                   "project":  "SKYNET server",
+                                                   "filePath":  "SKYNET server/Certificate/NetworkingCertManager.cs",
+                                                   "startLine":  63
+                                               },
+                                    "score":  100
+                                }
+                   },
+                   {
+                       "name":  "search C# method PersistenceRoundTripCheck",
+                       "category":  "accuracy",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  3.7,
+                       "details":  "count=1",
+                       "data":  [
+                                    {
+                                        "symbol":  {
+                                                       "id":  "ebf472176e3b0cd3d38de3e5",
+                                                       "name":  "PersistenceRoundTripCheck",
+                                                       "qualifiedName":  "SKYNET_server.Persistence.PersistenceRoundTripCheck",
+                                                       "kind":  "NamedType",
+                                                       "project":  "SKYNET server",
+                                                       "filePath":  "SKYNET server/Persistence/PersistenceRoundTripCheck.cs",
+                                                       "startLine":  15
+                                                   },
+                                        "score":  100
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "search C# NormalizeJson",
+                       "category":  "accuracy",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  3.7,
+                       "details":  "count=1",
+                       "data":  [
+                                    {
+                                        "symbol":  {
+                                                       "id":  "b4077dfb92dfabb69807a703",
+                                                       "name":  "NormalizeJson",
+                                                       "qualifiedName":  "SKYNET_server.Services.ScriptDatabase.NormalizeJson(string?, string)",
+                                                       "kind":  "Method",
+                                                       "project":  "SKYNET server",
+                                                       "filePath":  "SKYNET server/Services/ScriptDatabase.cs",
+                                                       "startLine":  65,
+                                                       "signature":  "string ScriptDatabase.NormalizeJson(string? json, string fallback)"
+                                                   },
+                                        "score":  100
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "search TS requestGuildData",
+                       "category":  "accuracy",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  3,
+                       "details":  "file=SKYNET server/GC/570/modules/Guilds.ts, line=117",
+                       "data":  {
+                                    "symbol":  {
+                                                   "id":  "d859e28181328a28eec39da7",
+                                                   "name":  "requestGuildData",
+                                                   "qualifiedName":  "Guilds.requestGuildData",
+                                                   "kind":  "method",
+                                                   "filePath":  "SKYNET server/GC/570/modules/Guilds.ts",
+                                                   "startLine":  117,
+                                                   "endLine":  134,
+                                                   "signature":  "private requestGuildData("
+                                               },
+                                    "score":  100
+                                }
+                   },
+                   {
+                       "name":  "search TS generated Msg property",
+                       "category":  "accuracy",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  3.1,
+                       "details":  "file=SKYNET server/GC/570/generated/dota.ts, line=21057",
+                       "data":  {
+                                    "symbol":  {
+                                                   "id":  "0b491ecce437e8d8462e0e05",
+                                                   "name":  "GCToClientTeamsInfo",
+                                                   "qualifiedName":  "Msg.GCToClientTeamsInfo",
+                                                   "kind":  "property",
+                                                   "filePath":  "SKYNET server/GC/570/generated/dota.ts",
+                                                   "startLine":  21057,
+                                                   "signature":  "GCToClientTeamsInfo: MessageId;"
+                                               },
+                                    "score":  100
+                                }
+                   },
+                   {
+                       "name":  "search missing symbol fast",
+                       "category":  "performance",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  85.2,
+                       "details":  "count=0, ms=85.2",
+                       "data":  null
+                   },
+                   {
+                       "name":  "search kind filter",
+                       "category":  "filters",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  3.6,
+                       "details":  "count=2, bad=0",
+                       "data":  null
+                   },
+                   {
+                       "name":  "search pathContains filter",
+                       "category":  "filters",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  4,
+                       "details":  "count=2, bad=0",
+                       "data":  null
+                   },
+                   {
+                       "name":  "includeRelationships attaches edges",
+                       "category":  "contract",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  11,
+                       "details":  "hasRelationships=True",
+                       "data":  {
+                                    "symbol":  {
+                                                   "id":  "1fc23afac5121e1bf6166c15",
+                                                   "name":  "CreateDbContext",
+                                                   "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory.CreateDbContext(string[])",
+                                                   "kind":  "Method",
+                                                   "project":  "SKYNET server",
+                                                   "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                   "startLine":  8,
+                                                   "signature":  "SteamDbContext SteamDbContextFactory.CreateDbContext(string[] args)"
+                                               },
+                                    "score":  100,
+                                    "relationships":  [
+                                                          {
+                                                              "sourceId":  "1fc23afac5121e1bf6166c15",
+                                                              "targetId":  "83a4b5847a30924428b8dfbd",
+                                                              "kind":  "references",
+                                                              "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                              "lines":  [
+                                                                            10,
+                                                                            13
+                                                                        ]
+                                                          },
+                                                          {
+                                                              "sourceId":  "1fc23afac5121e1bf6166c15",
+                                                              "targetId":  "83a4b5847a30924428b8dfbd",
+                                                              "kind":  "constructs",
+                                                              "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                              "lines":  [
+                                                                            13
+                                                                        ]
+                                                          },
+                                                          {
+                                                              "sourceId":  "a2bcac639e248879353206f6",
+                                                              "targetId":  "1fc23afac5121e1bf6166c15",
+                                                              "kind":  "contains",
+                                                              "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                              "lines":  [
+                                                                            8
+                                                                        ]
+                                                          }
+                                                      ]
+                                }
+                   },
+                   {
+                       "name":  "get_symbol advertised tool works",
+                       "category":  "contract",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  11.2,
+                       "details":  "name=CreateDbContext",
+                       "data":  {
+                                    "symbol":  {
+                                                   "id":  "1fc23afac5121e1bf6166c15",
+                                                   "name":  "CreateDbContext",
+                                                   "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory.CreateDbContext(string[])",
+                                                   "kind":  "Method",
+                                                   "project":  "SKYNET server",
+                                                   "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                   "startLine":  8,
+                                                   "signature":  "SteamDbContext SteamDbContextFactory.CreateDbContext(string[] args)"
+                                               },
+                                    "outgoing":  [
+                                                     {
+                                                         "sourceId":  "1fc23afac5121e1bf6166c15",
+                                                         "targetId":  "83a4b5847a30924428b8dfbd",
+                                                         "kind":  "references",
+                                                         "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                         "lines":  [
+                                                                       10,
+                                                                       13
+                                                                   ]
+                                                     },
+                                                     {
+                                                         "sourceId":  "1fc23afac5121e1bf6166c15",
+                                                         "targetId":  "83a4b5847a30924428b8dfbd",
+                                                         "kind":  "constructs",
+                                                         "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                         "lines":  [
+                                                                       13
+                                                                   ]
+                                                     }
+                                                 ],
+                                    "outgoingTruncated":  false,
+                                    "incoming":  [
+                                                     {
+                                                         "sourceId":  "a2bcac639e248879353206f6",
+                                                         "targetId":  "1fc23afac5121e1bf6166c15",
+                                                         "kind":  "contains",
+                                                         "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                         "lines":  [
+                                                                       8
+                                                                   ]
+                                                     }
+                                                 ],
+                                    "incomingTruncated":  false,
+                                    "neighbors":  [
+                                                      {
+                                                          "id":  "83a4b5847a30924428b8dfbd",
+                                                          "name":  "SteamDbContext",
+                                                          "qualifiedName":  "SKYNET_server.Persistence.SteamDbContext",
+                                                          "kind":  "NamedType",
+                                                          "project":  "SKYNET server",
+                                                          "filePath":  "SKYNET server/Persistence/AppDbContext.cs",
+                                                          "startLine":  16
+                                                      },
+                                                      {
+                                                          "id":  "a2bcac639e248879353206f6",
+                                                          "name":  "SteamDbContextFactory",
+                                                          "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory",
+                                                          "kind":  "NamedType",
+                                                          "project":  "SKYNET server",
+                                                          "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                          "startLine":  6
+                                                      }
+                                                  ]
+                                }
+                   },
+                   {
+                       "name":  "file_outline factory completeness",
+                       "category":  "source",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  5.7,
+                       "details":  "lines=6,8,17,19",
+                       "data":  [
+                                    {
+                                        "id":  "a2bcac639e248879353206f6",
+                                        "name":  "SteamDbContextFactory",
+                                        "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory",
+                                        "kind":  "NamedType",
+                                        "project":  "SKYNET server",
+                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                        "startLine":  6
+                                    },
+                                    {
+                                        "id":  "1fc23afac5121e1bf6166c15",
+                                        "name":  "CreateDbContext",
+                                        "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory.CreateDbContext(string[])",
+                                        "kind":  "Method",
+                                        "project":  "SKYNET server",
+                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                        "startLine":  8,
+                                        "signature":  "SteamDbContext SteamDbContextFactory.CreateDbContext(string[] args)"
+                                    },
+                                    {
+                                        "id":  "7083dd6ec512f1a5f4e95e96",
+                                        "name":  "DotaDbContextFactory",
+                                        "qualifiedName":  "SKYNET_server.Persistence.DotaDbContextFactory",
+                                        "kind":  "NamedType",
+                                        "project":  "SKYNET server",
+                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                        "startLine":  17
+                                    },
+                                    {
+                                        "id":  "339794370b942dd386110705",
+                                        "name":  "CreateDbContext",
+                                        "qualifiedName":  "SKYNET_server.Persistence.DotaDbContextFactory.CreateDbContext(string[])",
+                                        "kind":  "Method",
+                                        "project":  "SKYNET server",
+                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                        "startLine":  19,
+                                        "signature":  "DotaDbContext DotaDbContextFactory.CreateDbContext(string[] args)"
+                                    }
+                                ]
+                   },
+                   {
+                       "name":  "get_source exact range",
+                       "category":  "source",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  7.8,
+                       "details":  "start=8, end=14, truncated=False",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                    "startLine":  8,
+                                    "endLine":  14,
+                                    "totalLines":  26,
+                                    "content":  "    public SteamDbContext CreateDbContext(string[] args)\n    {\n        var options = new DbContextOptionsBuilder\u003cSteamDbContext\u003e()\n            .UseSqlite(\"Data Source=Data/steam.db\")\n            .Options;\n        return new SteamDbContext(options);\n    }",
+                                    "truncated":  false
+                                }
+                   },
+                   {
+                       "name":  "get_source max line cap",
+                       "category":  "source",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  24.1,
+                       "details":  "lineCount=400, truncated=True",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "filePath":  "SKYNET server/GC/570/generated/dota.ts",
+                                    "startLine":  1,
+                                    "endLine":  400,
+                                    "totalLines":  25423,
+                                    "content":  "// \u003cauto-generated\u003e\n// Generated by GC/570/tools/generate-dota-contracts.ps1.\n// Source inputs: server protobuf contracts, contracts/extra-message-ids.json, contracts/routes.json.\n// Do not edit this file directly.\n// \u003c/auto-generated\u003e\n\nexport interface ProtoDescriptor\u003cTMessage\u003e {\n    readonly name: string;\n}\n\nexport interface GcRoute\u003cTRequest, TResponse\u003e {\n    readonly requestId: number;\n    readonly request: ProtoDescriptor\u003cTRequest\u003e;\n    readonly responseId: number;\n    readonly response: ProtoDescriptor\u003cTResponse\u003e;\n}\n\nexport interface EmptyRequest {\n}\n\nexport type MessageId = number;\n\nexport interface CAttributeItemDynamicRecipeComponent {\n    readonly itemDef?: number;\n    readonly itemQuality?: number;\n    readonly itemFlags?: number;\n    readonly attributesString?: string;\n    readonly itemCount?: number;\n    readonly itemsFulfilled?: number;\n    readonly itemRarity?: number;\n    readonly lootlist?: string;\n    readonly fulfilledItemId?: bigint;\n    readonly associatedItemDef?: number;\n}\n\nexport interface CAttributeString {\n    readonly value?: string;\n}\n\nexport interface CBroadcastPostGameDataFrameRequest {\n    readonly appid?: number;\n    readonly steamid?: bigint;\n    readonly broadcastId?: bigint;\n    readonly frameData?: Uint8Array;\n}\n\nexport interface CCandyShopDev {\n}\n\nexport interface CCommunityClanAnnouncementInfo {\n    readonly gid?: bigint;\n    readonly clanid?: bigint;\n    readonly posterid?: bigint;\n    readonly headline?: string;\n    readonly posttime?: number;\n    readonly updatetime?: number;\n    readonly body?: string;\n    readonly commentcount?: number;\n    readonly tags?: string[];\n    readonly language?: number;\n    readonly hidden?: boolean;\n    readonly forumTopicId?: bigint;\n}\n\nexport interface CCommunityGetClanAnnouncementsRequest {\n    readonly steamid?: bigint;\n    readonly offset?: number;\n    readonly count?: number;\n    readonly maxchars?: number;\n    readonly stripHtml?: boolean;\n    readonly requiredTags?: string[];\n    readonly requireNoTags?: boolean;\n    readonly languagePreference?: number[];\n    readonly hiddenOnly?: boolean;\n    readonly onlyGid?: boolean;\n    readonly rtimeOldestDate?: number;\n    readonly includeHidden?: boolean;\n    readonly includePartnerEvents?: boolean;\n}\n\nexport interface CCommunityGetClanAnnouncementsResponse {\n    readonly maxchars?: number;\n    readonly stripHtml?: boolean;\n    readonly announcements?: CCommunityClanAnnouncementInfo[];\n}\n\nexport interface CDOTABroadcasterInfo {\n    readonly accountId?: number;\n    readonly serverSteamId?: bigint;\n    readonly live?: boolean;\n    readonly teamNameRadiant?: string;\n    readonly teamNameDire?: string;\n    readonly seriesGame?: number;\n    readonly upcomingBroadcastTimestamp?: number;\n    readonly allowLiveVideo?: boolean;\n    readonly nodeType?: number;\n    readonly nodeName?: string;\n}\n\nexport interface CDOTAClientHardwareSpecs {\n    readonly logicalProcessors?: number;\n    readonly cpuCyclesPerSecond?: bigint;\n    readonly totalPhysicalMemory?: bigint;\n    readonly is64BitOs?: boolean;\n    readonly uploadMeasurement?: bigint;\n    readonly preferNotHost?: boolean;\n    readonly crc?: number[];\n}\n\nexport interface CDOTALobbyMatchQualityData {\n    readonly overallQuality?: number;\n    readonly teamBalance?: number;\n    readonly matchSkillRange?: number;\n    readonly matchBehavior?: number;\n}\n\nexport interface CDOTAMatchMetadata {\n    readonly teams?: CDOTAMatchMetadata_Team[];\n    readonly lobbyId?: bigint;\n    readonly reportUntilTime?: bigint;\n    readonly eventGameCustomTable?: Uint8Array;\n    readonly primaryEventId?: number;\n    readonly matchmakingStats?: CMsgMatchMatchmakingStats;\n    readonly mvpData?: CMvpData;\n    readonly guildChallengeProgress?: CDOTAMatchMetadata_GuildChallengeProgress[];\n    readonly customPostGameTable?: Uint8Array;\n    readonly matchTips?: CDOTAMatchMetadata_Tip[];\n    readonly matchTrackedStats?: CMsgTrackedStat[];\n    readonly primaryEventIdForDisplay?: number;\n}\n\nexport interface CDOTAMatchMetadataFile {\n    readonly version?: number;\n    readonly matchId?: bigint;\n    readonly metadata?: CDOTAMatchMetadata;\n    readonly privateMetadata?: Uint8Array;\n}\n\nexport interface CDOTAMatchMetadata_EconItem {\n    readonly defIndex?: number;\n    readonly quality?: number;\n    readonly attribute?: CSOEconItemAttribute[];\n    readonly style?: number;\n    readonly equippedState?: CSOEconItemEquipped[];\n}\n\nexport interface CDOTAMatchMetadata_GuildChallengeProgress {\n    readonly guildId?: number;\n    readonly eventId?: number;\n    readonly challengeInstanceId?: number;\n    readonly challengeParameter?: number;\n    readonly challengeTimestamp?: number;\n    readonly challengeProgressAtStart?: number;\n    readonly challengeProgressAccumulated?: number;\n    readonly individualProgress?: CDOTAMatchMetadata_GuildChallengeProgress_IndividualProgress[];\n}\n\nexport interface CDOTAMatchMetadata_GuildChallengeProgress_IndividualProgress {\n    readonly progress?: number;\n    readonly playerSlot?: number;\n}\n\nexport interface CDOTAMatchMetadata_Team {\n    readonly dotaTeam?: number;\n    readonly players?: CDOTAMatchMetadata_Team_Player[];\n    readonly graphExperience?: number[];\n    readonly graphGoldEarned?: number[];\n    readonly graphNetWorth?: number[];\n    readonly cmFirstPick?: boolean;\n    readonly cmCaptainPlayerId?: number;\n    readonly cmPenalty?: number;\n    readonly teamTrackedStats?: CMsgTrackedStat[];\n    readonly kills?: CDOTAMatchMetadata_Team_KillInfo[];\n}\n\nexport interface CDOTAMatchMetadata_Team_ActionGrant {\n    readonly actionId?: number;\n    readonly quantity?: number;\n    readonly audit?: number;\n    readonly auditData?: bigint;\n}\n\nexport interface CDOTAMatchMetadata_Team_AutoStyleCriteria {\n    readonly nameToken?: number;\n    readonly value?: number;\n}\n\nexport interface CDOTAMatchMetadata_Team_CandyGrant {\n    readonly points?: number;\n    readonly reason?: number;\n}\n\nexport interface CDOTAMatchMetadata_Team_CavernChallengeResult {\n    readonly completedPathId?: number;\n    readonly claimedRoomId?: number;\n}\n\nexport interface CDOTAMatchMetadata_Team_EventData {\n    readonly eventId?: number;\n    readonly eventPoints?: number;\n    readonly challengeInstanceId?: number;\n    readonly challengeQuestId?: number;\n    readonly challengeQuestChallengeId?: number;\n    readonly challengeCompleted?: boolean;\n    readonly challengeRankCompleted?: number;\n    readonly challengeRankPreviouslyCompleted?: number;\n    readonly eventOwned?: boolean;\n    readonly subChallengesWithProgress?: CDOTAMatchMetadata_Team_SubChallenge[];\n    readonly wagerWinnings?: number;\n    readonly cavernChallengeActive?: boolean;\n    readonly cavernChallengeWinnings?: number;\n    readonly amountWagered?: number;\n    readonly periodicPointAdjustments?: number;\n    readonly cavernChallengeMapResults?: CDOTAMatchMetadata_Team_CavernChallengeResult[];\n    readonly cavernChallengePlusShardWinnings?: number;\n    readonly actionsGranted?: CDOTAMatchMetadata_Team_ActionGrant[];\n    readonly cavernCrawlMapVariant?: number;\n    readonly teamWagerBonusPct?: number;\n    readonly wagerStreakPct?: number;\n    readonly candyPointsGranted?: CDOTAMatchMetadata_Team_CandyGrant[];\n    readonly activeSeasonId?: number;\n    readonly cavernCrawlHalfCredit?: boolean;\n    readonly periodicResources?: CDOTAMatchMetadata_Team_PeriodicResourceData[];\n    readonly extraEventMessages?: CExtraMsgBlock[];\n}\n\nexport interface CDOTAMatchMetadata_Team_FeaturedGamemodeProgress {\n    readonly startValue?: number;\n    readonly endValue?: number;\n    readonly maxValue?: number;\n}\n\nexport interface CDOTAMatchMetadata_Team_InventorySnapshot {\n    readonly itemId?: number[];\n    readonly gameTime?: number;\n    readonly kills?: number;\n    readonly deaths?: number;\n    readonly assists?: number;\n    readonly level?: number;\n    readonly backpackItemId?: number[];\n    readonly neutralItemId?: number;\n    readonly neutralEnhancementId?: number;\n    readonly lastHits?: number;\n    readonly denies?: number;\n    readonly flags?: number;\n}\n\nexport interface CDOTAMatchMetadata_Team_ItemPurchase {\n    readonly itemId?: number;\n    readonly purchaseTime?: number;\n}\n\nexport interface CDOTAMatchMetadata_Team_KillInfo {\n    readonly killType?: number;\n    readonly victimPlayerSlot?: number;\n    readonly killerPlayerSlot?: number[];\n    readonly time?: number;\n    readonly bounty?: number;\n}\n\nexport interface CDOTAMatchMetadata_Team_PeriodicResourceData {\n    readonly periodicResourceId?: number;\n    readonly remaining?: number;\n    readonly max?: number;\n}\n\nexport interface CDOTAMatchMetadata_Team_Player {\n    readonly abilityUpgrades?: number[];\n    readonly playerSlot?: number;\n    readonly kills?: CDOTAMatchMetadata_Team_PlayerKill[];\n    readonly items?: CDOTAMatchMetadata_Team_ItemPurchase[];\n    readonly avgKillsX16?: number;\n    readonly avgDeathsX16?: number;\n    readonly avgAssistsX16?: number;\n    readonly avgGpmX16?: number;\n    readonly avgXpmX16?: number;\n    readonly bestKillsX16?: number;\n    readonly bestAssistsX16?: number;\n    readonly bestGpmX16?: number;\n    readonly bestXpmX16?: number;\n    readonly winStreak?: number;\n    readonly bestWinStreak?: number;\n    readonly fightScore?: number;\n    readonly farmScore?: number;\n    readonly supportScore?: number;\n    readonly pushScore?: number;\n    readonly levelUpTimes?: number[];\n    readonly graphNetWorth?: number[];\n    readonly inventorySnapshot?: CDOTAMatchMetadata_Team_InventorySnapshot[];\n    readonly avgStatsCalibrated?: boolean;\n    readonly autoStyleCriteria?: CDOTAMatchMetadata_Team_AutoStyleCriteria[];\n    readonly eventData?: CDOTAMatchMetadata_Team_EventData[];\n    readonly strangeGemProgress?: CDOTAMatchMetadata_Team_StrangeGemProgress[];\n    readonly heroXp?: number;\n    readonly campsStacked?: number;\n    readonly victoryPrediction?: CDOTAMatchMetadata_Team_VictoryPrediction[];\n    readonly laneSelectionFlags?: number;\n    readonly rampages?: number;\n    readonly tripleKills?: number;\n    readonly aegisSnatched?: number;\n    readonly rapiersPurchased?: number;\n    readonly couriersKilled?: number;\n    readonly netWorthRank?: number;\n    readonly supportGoldSpent?: number;\n    readonly observerWardsPlaced?: number;\n    readonly sentryWardsPlaced?: number;\n    readonly wardsDewarded?: number;\n    readonly stunDuration?: number;\n    readonly rankMmrBoostType?: number;\n    readonly contractProgress?: CDOTAMatchMetadata_Team_Player_ContractProgress[];\n    readonly guildIds?: number[];\n    readonly graphHeroDamage?: number[];\n    readonly teamNumber?: number;\n    readonly teamSlot?: number;\n    readonly featuredGamemodeProgress?: CDOTAMatchMetadata_Team_FeaturedGamemodeProgress;\n    readonly featuredHeroStickerIndex?: number;\n    readonly featuredHeroStickerQuality?: number;\n    readonly equippedEconItems?: CDOTAMatchMetadata_EconItem[];\n    readonly gamePlayerId?: number;\n    readonly playerTrackedStats?: CMsgTrackedStat[];\n    readonly overworldRewards?: CDOTAMatchMetadata_Team_Player_OverworldRewards;\n    readonly craftworksQuestRewards?: CMsgCraftworksQuestReward[];\n    readonly adFacetHeroId?: number;\n    readonly monsterHunterRewards?: CMsgMonsterHunterMatchRewards_Player;\n}\n\nexport interface CDOTAMatchMetadata_Team_PlayerKill {\n    readonly victimSlot?: number;\n    readonly count?: number;\n}\n\nexport interface CDOTAMatchMetadata_Team_Player_ContractProgress {\n    readonly guildId?: number;\n    readonly eventId?: number;\n    readonly challengeInstanceId?: number;\n    readonly challengeParameter?: number;\n    readonly contractStars?: number;\n    readonly contractSlot?: number;\n    readonly completed?: boolean;\n}\n\nexport interface CDOTAMatchMetadata_Team_Player_OverworldRewards {\n    readonly overworldId?: number;\n    readonly tokens?: CMsgOverworldTokenQuantity;\n}\n\nexport interface CDOTAMatchMetadata_Team_StrangeGemProgress {\n    readonly killEaterType?: number;\n    readonly gemItemDefIndex?: number;\n    readonly requiredHeroId?: number;\n    readonly startingValue?: number;\n    readonly endingValue?: number;\n    readonly ownerItemDefIndex?: number;\n    readonly ownerItemId?: bigint;\n}\n\nexport interface CDOTAMatchMetadata_Team_SubChallenge {\n    readonly slotId?: number;\n    readonly startValue?: number;\n    readonly endValue?: number;\n    readonly completed?: boolean;\n}\n\nexport interface CDOTAMatchMetadata_Team_VictoryPrediction {\n    readonly itemId?: bigint;\n    readonly itemDefIndex?: number;\n    readonly startingValue?: number;\n    readonly isVictory?: boolean;\n}\n\nexport interface CDOTAMatchMetadata_Tip {\n    readonly sourcePlayerSlot?: number;\n    readonly targetPlayerSlot?: number;\n    readonly tipAmount?: number;\n    readonly eventId?: number;\n}\n\nexport interface CDOTAMatchPrivateMetadata {\n    readonly teams?: CDOTAMatchPrivateMetadata_Team[];\n    readonly graphWinProbability?: number[];\n    readonly stringNames?: CDOTAMatchPrivateMetadata_StringName[];\n    readonly contributions?: CDOTAMatchPrivateMetadata_ContributionsCombatSegment[];\n}\n\nexport interface CDOTAMatchPrivateMetadata_ContributionsCombatSegment {\n    readonly gameTime?: number;\n    readonly damageContributions?: CDOTAMatchPrivateMetadata_ContributionsCombatSegment_DamageContributionRecord[];\n    readonly damageMitigations?: CDOTAMatchPrivateMetadata_ContributionsCombatSegment_DamageMitigationRecord[];\n    readonly healingContributions?: CDOTAMatchPrivateMetadata_ContributionsCombatSegment_HealingContributionRecord[];\n    readonly healingReductions?: CDOTAMatchPrivateMetadata_ContributionsCombatSegment_HealingReductionRecord[];\n    readonly killingBlows?: CDOTAMatchPrivateMetadata_ContributionsCombatSegment_KillingBlow[];\n    readonly dispels?: CDOTAMatchPrivateMetadata_ContributionsCombatSegment_Dispel[];\n}\n\nexport interface CDOTAMatchPrivateMetadata_ContributionsCombatSegment_DamageContributionRecord {\n    readonly attackerAbilityId?: number;\n    readonly attackerHeroId?: number;\n    readonly targetHeroId?: number;\n    readonly contributorAbilityId?: number;\n    readonly contributorHeroId?: number;",
+                                    "truncated":  true
+                                }
+                   },
+                   {
+                       "name":  "get_source rejects traversal",
+                       "category":  "errors",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  3.4,
+                       "details":  "isError=True, text=Path escapes the repository root",
+                       "data":  null
+                   },
+                   {
+                       "name":  "get_source rejects invalid range",
+                       "category":  "errors",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  2,
+                       "details":  "isError=True, text=startLine (30) is greater than endLine (1); pass clamp=true to auto-correct instead of erroring",
+                       "data":  null
+                   },
+                   {
+                       "name":  "get_source rejects unknown file",
+                       "category":  "errors",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  1.1,
+                       "details":  "isError=True, text=File not found: does/not/exist.cs",
+                       "data":  null
+                   },
+                   {
+                       "name":  "find_callers TS callable owner",
+                       "category":  "graph",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  22.4,
+                       "details":  "callableCallers=1",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "generation":  "20260721222315821",
+                                    "nodes":  [
+                                                  {
+                                                      "id":  "681e53c30da7c8a0d33701ad",
+                                                      "name":  "matchStateHistory",
+                                                      "qualifiedName":  "Match.matchStateHistory",
+                                                      "kind":  "method",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "startLine":  145,
+                                                      "endLine":  153,
+                                                      "signature":  "private matchStateHistory(ctx: RawMessageContext): boolean {"
+                                                  },
+                                                  {
+                                                      "id":  "7862fc5eaac3a4fe8b5e1357",
+                                                      "name":  "summarizeMatchStateHistory",
+                                                      "kind":  "function",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "startLine":  257,
+                                                      "endLine":  289,
+                                                      "signature":  "function summarizeMatchStateHistory("
+                                                  }
+                                              ],
+                                    "edges":  [
+                                                  {
+                                                      "sourceId":  "681e53c30da7c8a0d33701ad",
+                                                      "targetId":  "7862fc5eaac3a4fe8b5e1357",
+                                                      "kind":  "calls",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "lines":  [
+                                                                    147
+                                                                ]
+                                                  }
+                                              ],
+                                    "truncated":  false
+                                }
+                   },
+                   {
+                       "name":  "find_callees C# includes construct dependency",
+                       "category":  "graph",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  3.4,
+                       "details":  "constructEdges=1",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "generation":  "20260721222315821",
+                                    "nodes":  [
+                                                  {
+                                                      "id":  "1fc23afac5121e1bf6166c15",
+                                                      "name":  "CreateDbContext",
+                                                      "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory.CreateDbContext(string[])",
+                                                      "kind":  "Method",
+                                                      "project":  "SKYNET server",
+                                                      "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                      "startLine":  8,
+                                                      "signature":  "SteamDbContext SteamDbContextFactory.CreateDbContext(string[] args)"
+                                                  },
+                                                  {
+                                                      "id":  "83a4b5847a30924428b8dfbd",
+                                                      "name":  "SteamDbContext",
+                                                      "qualifiedName":  "SKYNET_server.Persistence.SteamDbContext",
+                                                      "kind":  "NamedType",
+                                                      "project":  "SKYNET server",
+                                                      "filePath":  "SKYNET server/Persistence/AppDbContext.cs",
+                                                      "startLine":  16
+                                                  }
+                                              ],
+                                    "edges":  [
+                                                  {
+                                                      "sourceId":  "1fc23afac5121e1bf6166c15",
+                                                      "targetId":  "83a4b5847a30924428b8dfbd",
+                                                      "kind":  "constructs",
+                                                      "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                      "lines":  [
+                                                                    13
+                                                                ]
+                                                  }
+                                              ],
+                                    "truncated":  false
+                                }
+                   },
+                   {
+                       "name":  "get_graph edgeKinds calls only",
+                       "category":  "graph",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  7.4,
+                       "details":  "edges=1, bad=0",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "generation":  "20260721222315821",
+                                    "nodes":  [
+                                                  {
+                                                      "id":  "681e53c30da7c8a0d33701ad",
+                                                      "name":  "matchStateHistory",
+                                                      "qualifiedName":  "Match.matchStateHistory",
+                                                      "kind":  "method",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "startLine":  145,
+                                                      "endLine":  153,
+                                                      "signature":  "private matchStateHistory(ctx: RawMessageContext): boolean {"
+                                                  },
+                                                  {
+                                                      "id":  "7862fc5eaac3a4fe8b5e1357",
+                                                      "name":  "summarizeMatchStateHistory",
+                                                      "kind":  "function",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "startLine":  257,
+                                                      "endLine":  289,
+                                                      "signature":  "function summarizeMatchStateHistory("
+                                                  }
+                                              ],
+                                    "edges":  [
+                                                  {
+                                                      "sourceId":  "681e53c30da7c8a0d33701ad",
+                                                      "targetId":  "7862fc5eaac3a4fe8b5e1357",
+                                                      "kind":  "calls",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "lines":  [
+                                                                    147
+                                                                ]
+                                                  }
+                                              ],
+                                    "truncated":  false
+                                }
+                   },
+                   {
+                       "name":  "find_references returns reference edge",
+                       "category":  "graph",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  6.4,
+                       "details":  "references=1",
+                       "data":  {
+                                    "repositoryId":  "skynet-steam-emulator",
+                                    "generation":  "20260721222315821",
+                                    "nodes":  [
+                                                  {
+                                                      "id":  "0b491ecce437e8d8462e0e05",
+                                                      "name":  "GCToClientTeamsInfo",
+                                                      "qualifiedName":  "Msg.GCToClientTeamsInfo",
+                                                      "kind":  "property",
+                                                      "filePath":  "SKYNET server/GC/570/generated/dota.ts",
+                                                      "startLine":  21057,
+                                                      "signature":  "GCToClientTeamsInfo: MessageId;"
+                                                  },
+                                                  {
+                                                      "id":  "cae2c75dd758e57702e64f13",
+                                                      "name":  "myTeamInfo",
+                                                      "qualifiedName":  "Profile.myTeamInfo",
+                                                      "kind":  "method",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Profile.ts",
+                                                      "startLine":  247,
+                                                      "endLine":  251,
+                                                      "signature":  "private myTeamInfo(ctx: RawMessageContext): boolean {"
+                                                  }
+                                              ],
+                                    "edges":  [
+                                                  {
+                                                      "sourceId":  "cae2c75dd758e57702e64f13",
+                                                      "targetId":  "0b491ecce437e8d8462e0e05",
+                                                      "kind":  "references",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Profile.ts",
+                                                      "lines":  [
+                                                                    249
+                                                                ]
+                                                  }
+                                              ],
+                                    "truncated":  false
+                                }
+                   },
+                   {
+                       "name":  "batch success and partial failure",
+                       "category":  "batch",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  8.3,
+                       "details":  "results=3, ok=2, failed=1, firstTruncated=False",
+                       "data":  {
+                                    "results":  [
+                                                    {
+                                                        "tool":  "search_symbols",
+                                                        "ok":  true,
+                                                        "result":  {
+                                                                       "items":  [
+                                                                                     {
+                                                                                         "symbol":  {
+                                                                                                        "id":  "1fc23afac5121e1bf6166c15",
+                                                                                                        "name":  "CreateDbContext",
+                                                                                                        "qualifiedName":  "SKYNET_server.Persistence.SteamDbContextFactory.CreateDbContext(string[])",
+                                                                                                        "kind":  "Method",
+                                                                                                        "project":  "SKYNET server",
+                                                                                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                                                                        "startLine":  8,
+                                                                                                        "signature":  "SteamDbContext SteamDbContextFactory.CreateDbContext(string[] args)"
+                                                                                                    },
+                                                                                         "score":  100
+                                                                                     },
+                                                                                     {
+                                                                                         "symbol":  {
+                                                                                                        "id":  "339794370b942dd386110705",
+                                                                                                        "name":  "CreateDbContext",
+                                                                                                        "qualifiedName":  "SKYNET_server.Persistence.DotaDbContextFactory.CreateDbContext(string[])",
+                                                                                                        "kind":  "Method",
+                                                                                                        "project":  "SKYNET server",
+                                                                                                        "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                                                                        "startLine":  19,
+                                                                                                        "signature":  "DotaDbContext DotaDbContextFactory.CreateDbContext(string[] args)"
+                                                                                                    },
+                                                                                         "score":  100
+                                                                                     }
+                                                                                 ],
+                                                                       "truncated":  false
+                                                                   }
+                                                    },
+                                                    {
+                                                        "tool":  "no_such_tool",
+                                                        "ok":  false,
+                                                        "error":  "Unknown tool: no_such_tool"
+                                                    },
+                                                    {
+                                                        "tool":  "get_source",
+                                                        "ok":  true,
+                                                        "result":  {
+                                                                       "repositoryId":  "skynet-steam-emulator",
+                                                                       "filePath":  "SKYNET server/Persistence/AppDbContextFactory.cs",
+                                                                       "startLine":  8,
+                                                                       "endLine":  14,
+                                                                       "totalLines":  26,
+                                                                       "content":  "    public SteamDbContext CreateDbContext(string[] args)\n    {\n        var options = new DbContextOptionsBuilder\u003cSteamDbContext\u003e()\n            .UseSqlite(\"Data Source=Data/steam.db\")\n            .Options;\n        return new SteamDbContext(options);\n    }",
+                                                                       "truncated":  false
+                                                                   }
+                                                    }
+                                                ]
+                                }
+                   },
+                   {
+                       "name":  "literal text behavior vs rg",
+                       "category":  "tokens",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  146.9,
+                       "details":  "mcpCount=0, rgCount=21, diagnostic=True",
+                       "data":  {
+                                    "mcp":  {
+                                                "items":  [
+
+                                                          ],
+                                                "truncated":  false,
+                                                "diagnostic":  "textual evidence disabled for this repository (includeTextualEvidence=false at index time); re-register with includeTextualEvidence=true and reindex to search string literals"
+                                            },
+                                    "rgCount":  21
+                                }
+                   },
+                   {
+                       "name":  "malformed JSON returns JSON-RPC parse error",
+                       "category":  "transport",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  11.6,
+                       "details":  "code=-32700, message=\u0027b\u0027 is an invalid start of a property name. Expected a \u0027\"\u0027. LineNumber: 0 | BytePositionInLine: 1.",
+                       "data":  null
+                   },
+                   {
+                       "name":  "unknown method returns JSON-RPC error",
+                       "category":  "transport",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  5.3,
+                       "details":  "code=-32601, message=Method not found: no/such/method",
+                       "data":  null
+                   },
+                   {
+                       "name":  "GET /mcp SSE handshake",
+                       "category":  "transport",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  2093.8,
+                       "details":  "sse=True, session=True",
+                       "data":  null
+                   },
+                   {
+                       "name":  "POST /message rejects missing session",
+                       "category":  "transport",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  49.9,
+                       "details":  "status=400",
+                       "data":  null
+                   },
+                   {
+                       "name":  "response size budget for search",
+                       "category":  "tokens",
+                       "severity":  "none",
+                       "passed":  true,
+                       "ms":  5.3,
+                       "details":  "bytes=1436",
+                       "data":  {
+                                    "items":  [
+                                                  {
+                                                      "symbol":  {
+                                                                     "id":  "3ac6aa491b9eea33a0e8c129",
+                                                                     "name":  "msg",
+                                                                     "qualifiedName":  "CMsgGCToClientApplyRemoteConVars.msg",
+                                                                     "kind":  "property",
+                                                                     "filePath":  "SKYNET server/GC/570/generated/dota.ts",
+                                                                     "startLine":  7748,
+                                                                     "signature":  "readonly msg?: CMsgApplyRemoteConVars;"
+                                                                 },
+                                                      "score":  100
+                                                  },
+                                                  {
+                                                      "symbol":  {
+                                                                     "id":  "1b12c670caa2226930e31bee",
+                                                                     "name":  "msg",
+                                                                     "qualifiedName":  "CMsgGCToServerApplyRemoteConVars.msg",
+                                                                     "kind":  "property",
+                                                                     "filePath":  "SKYNET server/GC/570/generated/dota.ts",
+                                                                     "startLine":  8884,
+                                                                     "signature":  "readonly msg?: CMsgApplyRemoteConVars;"
+                                                                 },
+                                                      "score":  100
+                                                  },
+                                                  {
+                                                      "symbol":  {
+                                                                     "id":  "0d3cf723e88a2e54d2ebb7e9",
+                                                                     "name":  "Msg",
+                                                                     "kind":  "variable",
+                                                                     "filePath":  "SKYNET server/GC/570/generated/dota.ts",
+                                                                     "startLine":  20470,
+                                                                     "endLine":  22886,
+                                                                     "signature":  "Msg: {"
+                                                                 },
+                                                      "score":  100
+                                                  },
+                                                  {
+                                                      "symbol":  {
+                                                                     "id":  "87b358053b1eed21dbd3ea6c",
+                                                                     "name":  "Msg",
+                                                                     "qualifiedName":  "CMsgGCToClientApplyRemoteConVars.Msg",
+                                                                     "kind":  "Property",
+                                                                     "project":  "SKYNET server",
+                                                                     "filePath":  "SKYNET server/Services/GameCoordinator/Generated/base_gcmessages.cs",
+                                                                     "startLine":  1799,
+                                                                     "signature":  "CMsgApplyRemoteConVars CMsgGCToClientApplyRemoteConVars.Msg"
+                                                                 },
+                                                      "score":  100
+                                                  },
+                                                  {
+                                                      "symbol":  {
+                                                                     "id":  "6d5759321b147dc593be2bd0",
+                                                                     "name":  "Msg",
+                                                                     "qualifiedName":  "CMsgGCToServerApplyRemoteConVars.Msg",
+                                                                     "kind":  "Property",
+                                                                     "project":  "SKYNET server",
+                                                                     "filePath":  "SKYNET server/Services/GameCoordinator/Generated/base_gcmessages.cs",
+                                                                     "startLine":  1811,
+                                                                     "signature":  "CMsgApplyRemoteConVars CMsgGCToServerApplyRemoteConVars.Msg"
+                                                                 },
+                                                      "score":  100
+                                                  }
+                                              ],
+                                    "truncated":  false
+                                }
+                   }
+               ]
+}

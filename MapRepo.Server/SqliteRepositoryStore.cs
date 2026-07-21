@@ -99,6 +99,27 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
             await command.ExecuteNonQueryAsync(cancellationToken);
         }
         await transaction.CommitAsync(cancellationToken);
+        _ = WarmSearchCacheAsync(snapshot.RepositoryId);
+    }
+
+    // search_symbols' LIKE fallback tier (only reached when a query matches neither the exact nor
+    // FTS5 tier) does a full SCAN symbols — unavoidable for a leading-wildcard LIKE, and normally
+    // fast (tens of ms), but the very first time it runs against a freshly (re)written database it
+    // pays a real cold-disk cost for paging in every row (seconds, not ms; confirmed via a repeat
+    // call dropping from ~2s to ~40ms once warm). Running one throwaway full-scan right after a
+    // reindex — off the request path, best-effort — moves that one-time cost off an agent's first
+    // miss query and onto the reindex that was already going to take a while anyway.
+    private async Task WarmSearchCacheAsync(string repositoryId)
+    {
+        try
+        {
+            await using var connection = await OpenAsync(repositoryId, CancellationToken.None);
+            await using var command = connection.CreateCommand();
+            command.CommandText = "SELECT count(*) FROM symbols WHERE name LIKE '%warm-up-never-matches%'";
+            await command.ExecuteScalarAsync();
+            await OverviewAsync(repositoryId, includeGenerated: false, cancellationToken: CancellationToken.None);
+        }
+        catch { /* best-effort warm-up only; never let this surface past the reindex it followed */ }
     }
 
     public async Task ReplaceFilesAsync(string repositoryId, string moduleId, IReadOnlyList<string> filePaths,

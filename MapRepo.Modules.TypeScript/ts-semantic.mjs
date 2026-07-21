@@ -282,6 +282,19 @@ function analyzeTargets(targetFiles) {
           }
         }
       }
+      // A property accessed as a value — `Msg.GCToClientTeamsInfo` read outside a call/new — never
+      // reaches the branch above: its identifier's parent IS the PropertyAccessExpression, which
+      // that branch deliberately excludes (it's already handled here, or by isCallExpression/
+      // isNewExpression above when it's a callee/constructor target). Without this, any property
+      // only ever consumed as `Namespace.Member` (the common shape for generated lookup tables)
+      // could never show up in find_references at all.
+      else if (ts.isPropertyAccessExpression(node)
+        && !(ts.isCallExpression(node.parent) && node.parent.expression === node)
+        && !(ts.isNewExpression(node.parent) && node.parent.expression === node)) {
+        const targetId = resolveTargetId(node.name);
+        const sourceId = enclosingIdOf(node);
+        if (targetId && targetId !== sourceId) addEdge(sourceId, targetId, 'references', sf, node.name, 'semantic');
+      }
       ts.forEachChild(node, visit);
     };
     visit(sf);
