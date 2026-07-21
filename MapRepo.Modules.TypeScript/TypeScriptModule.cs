@@ -259,12 +259,7 @@ public sealed class TypeScriptModule : IRepositoryLanguageModule, IIncrementalAn
     }
 
     private static IEnumerable<string> EnumerateFiles(string root) => Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories).Where(IsSource).Where(path => !Excluded(path));
-    private static bool Excluded(string path) => path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Any(p => p.Equals("node_modules", StringComparison.OrdinalIgnoreCase)
-        || p.Equals("dist", StringComparison.OrdinalIgnoreCase) || p.Equals("build", StringComparison.OrdinalIgnoreCase)
-        || p.Equals("coverage", StringComparison.OrdinalIgnoreCase) || p.Equals(".git", StringComparison.OrdinalIgnoreCase)
-        || p.Equals(".tmp", StringComparison.OrdinalIgnoreCase) || p.Equals("packages", StringComparison.OrdinalIgnoreCase)
-        || p.Equals("Data", StringComparison.OrdinalIgnoreCase) || p.Equals("bin", StringComparison.OrdinalIgnoreCase)
-        || p.Equals("obj", StringComparison.OrdinalIgnoreCase));
+    private static bool Excluded(string path) => PathExclusions.IsExcluded(path);
     private static bool IsSource(string path) => path.EndsWith(".ts", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".tsx", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".js", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".jsx", StringComparison.OrdinalIgnoreCase);
     private static string Language(string path) => path.EndsWith("x", StringComparison.OrdinalIgnoreCase) ? "tsx" : path.EndsWith("ts", StringComparison.OrdinalIgnoreCase) ? "typescript" : "javascript";
     private static string Relative(string root, string path) => Path.GetRelativePath(root, path).Replace('\\', '/');

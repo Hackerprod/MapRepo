@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging;
 using MapRepo.Core;
 
 namespace MapRepo.Server;
@@ -9,13 +10,17 @@ public sealed class RepositorySessionManager : IAsyncDisposable
     private readonly ModuleRegistry _registry;
     private readonly IRepositoryStore _store;
     private readonly RepositoryCatalog _catalog;
+    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger<RepositorySessionManager> _logger;
     private readonly ConcurrentDictionary<string, RepositorySession> _sessions = new(StringComparer.OrdinalIgnoreCase);
 
-    public RepositorySessionManager(ModuleRegistry registry, IRepositoryStore store, RepositoryCatalog catalog)
+    public RepositorySessionManager(ModuleRegistry registry, IRepositoryStore store, RepositoryCatalog catalog, ILoggerFactory loggerFactory)
     {
         _registry = registry;
         _store = store;
         _catalog = catalog;
+        _loggerFactory = loggerFactory;
+        _logger = loggerFactory.CreateLogger<RepositorySessionManager>();
     }
 
     public IReadOnlyCollection<IRepositoryLanguageModule> Modules => _registry.Modules;
@@ -30,7 +35,7 @@ public sealed class RepositorySessionManager : IAsyncDisposable
             {
                 // A missing path or a corrupt database for one repository must not stop the server
                 // from restoring the rest; it stays cataloged and can be repaired/reindexed later.
-                _ = ex;
+                _logger.LogWarning(ex, "Failed to restore repository {RepositoryId} from the catalog; it remains cataloged for later repair", definition.Id);
             }
         }
     }
@@ -40,7 +45,8 @@ public sealed class RepositorySessionManager : IAsyncDisposable
         var root = Path.GetFullPath(definition.RootPath);
         if (!Directory.Exists(root)) throw new DirectoryNotFoundException($"Repository root not found: {root}");
         var normalized = definition with { RootPath = root, SolutionPath = string.IsNullOrWhiteSpace(definition.SolutionPath) ? null : Path.GetFullPath(definition.SolutionPath) };
-        var session = _sessions.GetOrAdd(normalized.Id, _ => new RepositorySession(normalized, _registry, _store));
+        var session = _sessions.GetOrAdd(normalized.Id, _ => new RepositorySession(normalized, _registry, _store,
+            _loggerFactory.CreateLogger($"MapRepo.Server.RepositorySession[{normalized.Id}]")));
         _catalog.Upsert(normalized);
         session.StartWatcher();
         await session.EnsureInitialIndexStartedAsync(reindex, cancellationToken);
@@ -123,6 +129,7 @@ public sealed class RepositorySession : IAsyncDisposable
     private readonly RepositoryDefinition _definition;
     private readonly ModuleRegistry _registry;
     private readonly IRepositoryStore _store;
+    private readonly ILogger _logger;
     private readonly SemaphoreSlim _indexLock = new(1, 1);
     private readonly object _watchLock = new();
     private readonly CancellationTokenSource _lifetime = new();
@@ -139,11 +146,12 @@ public sealed class RepositorySession : IAsyncDisposable
     // otherwise a background index task holding the semaphore hits ObjectDisposedException on Release().
     private volatile Task _lastIndexTask = Task.CompletedTask;
 
-    public RepositorySession(RepositoryDefinition definition, ModuleRegistry registry, IRepositoryStore store)
+    public RepositorySession(RepositoryDefinition definition, ModuleRegistry registry, IRepositoryStore store, ILogger logger)
     {
         _definition = definition;
         _registry = registry;
         _store = store;
+        _logger = logger;
     }
 
     public RepositoryDefinition Definition => _definition;
@@ -175,6 +183,7 @@ public sealed class RepositorySession : IAsyncDisposable
             catch (Exception ex)
             {
                 _lastIndexError = ex.Message;
+                _logger.LogError(ex, "Indexing failed for repository {RepositoryId}", _definition.Id);
                 Volatile.Write(ref _indexing, 0);
             }
         });
@@ -219,7 +228,7 @@ public sealed class RepositorySession : IAsyncDisposable
                     pending.Add(module);
                 }
                 if (patchedFiles > 0)
-                    Console.WriteLine($"[map-repo] {_definition.Id}: incremental reindex of {patchedFiles} file(s) in {stopwatch.ElapsedMilliseconds} ms");
+                    _logger.LogInformation("Incremental reindex of {FileCount} file(s) in {ElapsedMs} ms", patchedFiles, stopwatch.ElapsedMilliseconds);
                 if (pending.Count == 0)
                 {
                     var stored = await _store.StatusAsync(_definition.Id, cancellationToken);
@@ -335,24 +344,16 @@ public sealed class RepositorySession : IAsyncDisposable
     // trust a _changed set that might be missing entries.
     private void OnWatcherError(object sender, ErrorEventArgs args)
     {
-        _lastWatcherError = args.GetException()?.Message ?? "unknown watcher error";
+        var exception = args.GetException();
+        _lastWatcherError = exception?.Message ?? "unknown watcher error";
+        _logger.LogWarning(exception, "File watcher error for repository {RepositoryId}; forcing a full reindex", _definition.Id);
         lock (_watchLock) { _changed.Clear(); }
         QueueIndex(Array.Empty<string>());
     }
 
     private bool IsInteresting(string path)
     {
-        var segments = path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        if (segments.Any(segment => segment.Equals(".git", StringComparison.OrdinalIgnoreCase)
-            || segment.Equals(".tmp", StringComparison.OrdinalIgnoreCase)
-            || segment.Equals("packages", StringComparison.OrdinalIgnoreCase)
-            || segment.Equals("Data", StringComparison.OrdinalIgnoreCase)
-            || segment.Equals("node_modules", StringComparison.OrdinalIgnoreCase)
-            || segment.Equals("dist", StringComparison.OrdinalIgnoreCase)
-            || segment.Equals("build", StringComparison.OrdinalIgnoreCase)
-            || segment.Equals("coverage", StringComparison.OrdinalIgnoreCase)
-            || segment.Equals("bin", StringComparison.OrdinalIgnoreCase)
-            || segment.Equals("obj", StringComparison.OrdinalIgnoreCase))) return false;
+        if (PathExclusions.IsExcluded(path)) return false;
         return SourceExtensions.Any(extension => path.EndsWith(extension, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -365,7 +366,12 @@ public sealed class RepositorySession : IAsyncDisposable
         {
             try { await IndexAsync(changes, _lifetime.Token); }
             catch (OperationCanceledException) { }
-            catch (Exception ex) { _lastIndexError = ex.Message; Volatile.Write(ref _indexing, 0); }
+            catch (Exception ex)
+            {
+                _lastIndexError = ex.Message;
+                _logger.LogError(ex, "Watcher-triggered indexing failed for repository {RepositoryId}", _definition.Id);
+                Volatile.Write(ref _indexing, 0);
+            }
         });
     }
 

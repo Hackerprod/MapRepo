@@ -411,14 +411,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
         return true;
     }
 
-    private static bool Excluded(string path) => path.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-        .Any(part => part.Equals(".git", StringComparison.OrdinalIgnoreCase)
-            || part.Equals(".tmp", StringComparison.OrdinalIgnoreCase)
-            || part.Equals("packages", StringComparison.OrdinalIgnoreCase)
-            || part.Equals("Data", StringComparison.OrdinalIgnoreCase)
-            || part.Equals("node_modules", StringComparison.OrdinalIgnoreCase)
-            || part.Equals("bin", StringComparison.OrdinalIgnoreCase)
-            || part.Equals("obj", StringComparison.OrdinalIgnoreCase));
+    private static bool Excluded(string path) => PathExclusions.IsExcluded(path);
     private static string SymbolId(ISymbol symbol, string file) => Hash($"{file}|{symbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}");
     private static string CreateGeneration(RepositoryDefinition repository) => Hash($"{repository.Id}|{DateTimeOffset.UtcNow:yyyyMMddHHmm}")[..16];
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant()[..24];
