@@ -105,7 +105,8 @@ public sealed record FileEntry(string FilePath, int Symbols, string Language);
 public sealed record FileOutline(
     string RepositoryId,
     string FilePath,
-    IReadOnlyList<SymbolRecord> Symbols);
+    IReadOnlyList<SymbolRecord> Symbols,
+    bool Truncated = false);
 
 public sealed record SymbolDetail(
     SymbolRecord Symbol,
@@ -167,7 +168,7 @@ public interface IRepositoryStore
     Task<GraphResult> GraphAsync(string repositoryId, string symbolId, int depth, int limit, IReadOnlyList<string>? edgeKinds = null, CancellationToken cancellationToken = default);
     Task<RepositoryStatus> StatusAsync(string repositoryId, CancellationToken cancellationToken = default);
     Task<RepositoryOverview> OverviewAsync(string repositoryId, bool includeGenerated = false, CancellationToken cancellationToken = default);
-    Task<FileOutline> OutlineAsync(string repositoryId, string filePath, CancellationToken cancellationToken = default);
+    Task<FileOutline> OutlineAsync(string repositoryId, string filePath, int maxSymbols = 500, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<FileEntry>> FilesAsync(string repositoryId, string? contains, int limit, CancellationToken cancellationToken = default);
     Task<SymbolDetail?> SymbolAsync(string repositoryId, string symbolId, int limit, CancellationToken cancellationToken = default);
     Task DeleteAsync(string repositoryId, CancellationToken cancellationToken = default);

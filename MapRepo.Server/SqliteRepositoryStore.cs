@@ -399,16 +399,22 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         filePath.Contains("/obj/", StringComparison.OrdinalIgnoreCase) ||
         filePath.Contains("/generated/", StringComparison.OrdinalIgnoreCase);
 
-    public async Task<FileOutline> OutlineAsync(string repositoryId, string filePath, CancellationToken cancellationToken = default)
+    public async Task<FileOutline> OutlineAsync(string repositoryId, string filePath, int maxSymbols = 500, CancellationToken cancellationToken = default)
     {
+        var bounded = Math.Clamp(maxSymbols, 1, 500);
+        // Ask for one extra row so truncated reflects an actual (bounded+1)th declaration found and
+        // dropped, not just "returned count happened to equal the cap" (see search_symbols' identical
+        // fix — a file with exactly `bounded` declarations must not be reported as truncated).
         await using var connection = await OpenAsync(repositoryId, cancellationToken);
         await using var command = connection.CreateCommand();
-        command.CommandText = $"SELECT {SymbolColumns} FROM symbols WHERE file_path=$file AND kind<>'textual-evidence' ORDER BY start_line, start_column LIMIT 500";
-        Add(command, ("$file", filePath.Replace('\\', '/')));
+        command.CommandText = $"SELECT {SymbolColumns} FROM symbols WHERE file_path=$file AND kind<>'textual-evidence' ORDER BY start_line, start_column LIMIT $limit";
+        Add(command, ("$file", filePath.Replace('\\', '/')), ("$limit", bounded + 1));
         var symbols = new List<SymbolRecord>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         while (await reader.ReadAsync(cancellationToken)) symbols.Add(ReadSymbol(reader));
-        return new FileOutline(repositoryId, filePath.Replace('\\', '/'), symbols);
+        var truncated = symbols.Count > bounded;
+        if (truncated) symbols.RemoveRange(bounded, symbols.Count - bounded);
+        return new FileOutline(repositoryId, filePath.Replace('\\', '/'), symbols, truncated);
     }
 
     public async Task<IReadOnlyList<FileEntry>> FilesAsync(string repositoryId, string? contains, int limit, CancellationToken cancellationToken = default)

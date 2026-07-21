@@ -206,8 +206,21 @@ public sealed class McpDispatcher
                     neighbors = detail.Neighbors.Select(CompactSymbol).ToArray()
                 };
             case "file_outline":
-                var outline = await _store.OutlineAsync(Required("repositoryId"), Required("filePath"), ct);
-                return new { outline.RepositoryId, outline.FilePath, symbols = outline.Symbols.Select(CompactSymbol).ToArray() };
+                // compact drops per-symbol qualifiedName/project/signature (all filePath is dropped
+                // unconditionally — every entry's file is trivially outline.FilePath, so repeating it
+                // per row is pure waste). For a huge generated file (thousands of flat declarations,
+                // e.g. a protobuf message-id table) this is the difference between an orientation
+                // call and a multi-thousand-token dump.
+                var wantsCompact = OptionalBool("compact", false);
+                var maxSymbols = OptionalInt("maxSymbols", 500);
+                var outline = await _store.OutlineAsync(Required("repositoryId"), Required("filePath"), maxSymbols, ct);
+                return new
+                {
+                    outline.RepositoryId,
+                    outline.FilePath,
+                    symbols = outline.Symbols.Select(s => wantsCompact ? CompactSymbolMinimal(s) : CompactSymbolNoFile(s)).ToArray(),
+                    outline.Truncated
+                };
             case "list_files":
                 var filesLimit = OptionalInt("limit", 500);
                 var files = await _store.FilesAsync(Required("repositoryId"), Optional("contains"), filesLimit, ct);
@@ -263,6 +276,30 @@ public sealed class McpDispatcher
         startLine = s.StartLine,
         endLine = s.EndLine == s.StartLine ? (int?)null : s.EndLine,
         signature = s.Signature == s.Name ? null : s.Signature
+    };
+
+    // file_outline only: every entry's file is trivially the outline's own FilePath, so filePath is
+    // dropped unconditionally regardless of compact mode.
+    private static object CompactSymbolNoFile(SymbolRecord s) => new
+    {
+        id = s.Id,
+        name = s.Name,
+        qualifiedName = s.QualifiedName == s.Name ? null : s.QualifiedName,
+        kind = s.Kind,
+        project = s.Project,
+        startLine = s.StartLine,
+        endLine = s.EndLine == s.StartLine ? (int?)null : s.EndLine,
+        signature = s.Signature == s.Name ? null : s.Signature
+    };
+
+    // file_outline compact=true: just enough to see the file's shape (name, kind, line) — for a
+    // huge generated file with thousands of flat declarations, id/qualifiedName/signature are most
+    // of the token cost and rarely needed just to orient ("what's in this file, roughly where").
+    private static object CompactSymbolMinimal(SymbolRecord s) => new
+    {
+        name = s.Name,
+        kind = s.Kind,
+        startLine = s.StartLine
     };
 
     // One logical edge per (source, target, kind, file); call sites collapse into a bounded lines list.

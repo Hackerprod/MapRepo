@@ -113,7 +113,7 @@ app.MapGet("/api/repos/{id}/files", async (string id, string? contains, int? lim
     Results.Ok(await store.FilesAsync(id, contains, limit ?? 500, ct)));
 
 app.MapGet("/api/repos/{id}/outline", async (string id, string path, IRepositoryStore store, CancellationToken ct) =>
-    Results.Ok(await store.OutlineAsync(id, path, ct)));
+    Results.Ok(await store.OutlineAsync(id, path, cancellationToken: ct)));
 
 app.MapGet("/api/repos/{id}/source", async (string id, string path, int? start, int? end, RepositorySessionManager manager, CancellationToken ct) =>
 {

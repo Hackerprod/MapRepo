@@ -54,9 +54,11 @@ public static class McpToolCatalog
             StringProperty("symbolId", "Symbol id from search_symbols or graph results."),
             IntegerProperty("limit", "Maximum edges per direction (default 40; hub symbols can have hundreds — raise only when outgoingTruncated/incomingTruncated come back true).")
         ], ["repositoryId", "symbolId"])),
-        new("file_outline", "All declarations in one file ordered by line — read this instead of the file to save tokens", Schema([
+        new("file_outline", "All declarations in one file ordered by line — read this instead of the file to save tokens. A huge generated file (thousands of flat declarations) can still cost tens of thousands of tokens; use maxSymbols and/or compact to cut that down.", Schema([
             StringProperty("repositoryId", "Repository id."),
-            StringProperty("filePath", "Repository-relative file path with forward slashes.")
+            StringProperty("filePath", "Repository-relative file path with forward slashes."),
+            IntegerProperty("maxSymbols", "Maximum declarations to return (default 500, the hard cap)."),
+            BooleanProperty("compact", "Return only name/kind/startLine per declaration (drop id/qualifiedName/project/signature) — for orienting in a huge generated file at a fraction of the token cost.")
         ], ["repositoryId", "filePath"])),
         new("list_files", "List indexed files with their declaration counts; optional substring filter", Schema([
             StringProperty("repositoryId", "Repository id."),
