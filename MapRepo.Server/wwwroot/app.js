@@ -277,11 +277,11 @@ function frame(t) {
       ctx.globalAlpha = Math.min(1, alpha + .2);
       ctx.font = `${isFocus ? '600 ' : ''}${Math.max(10, 11 * Math.min(1.25, n.ss))}px Inter, system-ui`;
       ctx.fillStyle = isFocus ? '#eaf4ff' : 'rgba(200,220,240,.85)';
-      ctx.fillText(n.rec.name, n.sx + r + 6, n.sy + 3);
+      ctx.fillText(n.rec.name, n.sx + r + 10, n.sy + 3);
       if (isFocus) {
         ctx.font = `${Math.max(9, 9.5 * Math.min(1.1, n.ss))}px ${'"Cascadia Code"'}, Consolas, monospace`;
         ctx.fillStyle = 'rgba(110,150,190,.9)';
-        ctx.fillText(`${n.rec.filePath}:${n.rec.startLine}`, n.sx + r + 6, n.sy + 16);
+        ctx.fillText(`${n.rec.filePath}:${n.rec.startLine}`, n.sx + r + 10, n.sy + 16);
       }
     }
   }
