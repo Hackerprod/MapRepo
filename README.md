@@ -154,6 +154,28 @@ Reference `MapRepo.Core`, implement `IRepositoryLanguageModule` (optionally `IIn
 - Detail panel: signature, incoming/outgoing edges, exact source snippet on demand.
 - Deep link: `/#repo=<id>&q=<query>` auto-loads the first match.
 
+### Reading the detail panel's edge lists
+
+Each row is `<kind> <symbol name>` — the kind badge names the relationship, the name is the *other*
+symbol on that edge, not the selected one.
+
+- **Incoming** = edges where the selected symbol is the target — other symbols point *at* it.
+- **Outgoing** = edges where the selected symbol is the source — it points *at* other symbols.
+
+| Kind | Meaning |
+| --- | --- |
+| `calls` | one method/function invokes another |
+| `constructs` | `new X(...)` — one symbol instantiates a type |
+| `contains` | declaration nesting — a type/namespace contains a member |
+| `references` | reads/uses a symbol without calling or constructing it |
+| `inherits` | class extends a base class |
+| `implements` | class/struct implements an interface |
+| `imports` | one module imports another (TypeScript) |
+
+Example: selecting a method and seeing **Incoming: `contains` → `Crc32`** and **`calls` →
+`HashFinal`** means the method is declared inside class `Crc32`, and a method named `HashFinal`
+calls it.
+
 ## Security notes
 
 The server has **no authentication** and binds all interfaces by default so LAN agents can reach it. Anyone who can reach the port can register paths readable by your user and fetch indexed source. On untrusted networks, bind loopback (`--urls http://127.0.0.1:5087`) or firewall the port. `get_source` refuses paths that escape the registered repository root.
