@@ -656,6 +656,8 @@ public sealed class SqliteRepositoryStore : IRepositoryStore
         return await command.ExecuteScalarAsync(cancellationToken) as string;
     }
 
+    public string StoragePath(string repositoryId) => DirectoryFor(repositoryId);
+
     private string DirectoryFor(string repositoryId)
     {
         var slug = new string(repositoryId.Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' or '.' ? c : '-').ToArray());

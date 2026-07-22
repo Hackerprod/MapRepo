@@ -72,8 +72,17 @@ public sealed class McpDispatcher
 
     public async Task<RepositoryStatus> GetStatusAsync(string id, CancellationToken cancellationToken)
     {
-        try { return await _manager.Get(id).StatusAsync(cancellationToken); }
-        catch (KeyNotFoundException) { return await _store.StatusAsync(id, cancellationToken); }
+        try
+        {
+            try { return await _manager.Get(id).StatusAsync(cancellationToken); }
+            catch (KeyNotFoundException) { return await _store.StatusAsync(id, cancellationToken); }
+        }
+        catch (SqliteException ex)
+        {
+            // Same enrichment as list_repositories' per-repo isolation: name the actual storage
+            // directory so "disk I/O error" is actionable instead of a dead end.
+            throw new InvalidOperationException($"{ex.Message} (storage: {_store.StoragePath(id)})", ex);
+        }
     }
 
     public async Task<object> DispatchToolAsync(string tool, JsonElement args, CancellationToken ct)

@@ -177,6 +177,9 @@ public interface IRepositoryStore
     /// of symbols removed. Used to retroactively apply a new exclude pattern to an already-indexed
     /// repository — cheap and immediate, unlike a full reindex.</summary>
     Task<int> PurgePathAsync(string repositoryId, string pathPattern, CancellationToken cancellationToken = default);
+    /// <summary>The on-disk directory holding this repository's index files — for diagnostics, so
+    /// a disk I/O error names the actual file to go look at instead of just "disk I/O error".</summary>
+    string StoragePath(string repositoryId);
 }
 
 public sealed record RepositoryStatus(

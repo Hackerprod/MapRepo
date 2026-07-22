@@ -77,9 +77,12 @@ public sealed class RepositorySessionManager : IAsyncDisposable
             catch (SqliteException ex)
             {
                 // One repository's damaged database must not take down the whole list — every
-                // other repository is still perfectly queryable. Surface the failure as a diagnostic.
+                // other repository is still perfectly queryable. Surface the failure as a diagnostic,
+                // naming the actual directory so a disk I/O error is diagnosable without spelunking
+                // for which of N repositories' data-v4 folder is the one actually broken.
                 _logger.LogWarning(ex, "Status check failed for repository {RepositoryId}", definition.Id);
-                status = new RepositoryStatus(definition.Id, null, 0, 0, null, false, false, [$"Status check failed: {ex.Message}"]);
+                status = new RepositoryStatus(definition.Id, null, 0, 0, null, false, false,
+                    [$"Status check failed: {ex.Message} (storage: {_store.StoragePath(definition.Id)})"]);
             }
             summaries.Add(new RepositorySummary(definition, status));
         }
