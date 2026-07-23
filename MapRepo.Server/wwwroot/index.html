@@ -3,17 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MapRepo · 3D Code Atlas</title>
+  <title>MapRepo · 3D Code Atlas — live dependency graph</title>
+  <meta name="description" content="Interactive 3D dependency graph of your indexed repositories: real symbols as nodes, real calls/references/inherits relationships as edges.">
+
   <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-  <canvas id="space"></canvas>
+  <canvas id="space" title="Interactive 3D dependency graph — every node here is a real indexed symbol, every edge a real relationship (calls/references/inherits/...), not a static diagram."></canvas>
 
   <header class="topbar glass">
     <div class="brand">
       <span class="brand-mark">◈</span>
       <span class="brand-name">MapRepo</span>
-      <span class="brand-sub">3D Code Atlas</span>
+      <span class="brand-sub" title="Interactive 3D dependency graph — every node here is a real indexed symbol, every edge a real relationship (calls/references/inherits/...), not a static diagram.">3D Code Atlas · live dependency graph</span>
     </div>
     <div class="repo-controls">
       <select id="repoSelect" title="Repository"></select>

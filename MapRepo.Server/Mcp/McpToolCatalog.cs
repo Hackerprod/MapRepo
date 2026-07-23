@@ -98,8 +98,8 @@ public static class McpToolCatalog
             required = new[] { "calls" },
             additionalProperties = false
         }),
-        new("find_callers", "Find methods that call a symbol. Defaults to calls edges; pass edgeKinds to widen (e.g. [\"calls\",\"constructs\"]).", GraphLookupSchema()),
-        new("find_callees", "Find symbols called or constructed by a method. Defaults to calls+constructs edges; pass edgeKinds to narrow or widen further.", GraphLookupSchema()),
+        new("find_callers", "Find methods that call a symbol. Defaults to calls edges; pass edgeKinds to widen (e.g. [\"calls\",\"constructs\"]), or wide:true for calls+references (TypeScript in particular often models real usage — a handler table, a property holding a function — as references, not calls).", CallGraphLookupSchema()),
+        new("find_callees", "Find symbols called or constructed by a method. Defaults to calls+constructs edges; pass edgeKinds to narrow or widen further, or wide:true to also include references (see find_callers).", CallGraphLookupSchema()),
         new("find_references", "Find reference edges around a symbol", SymbolLookupSchema()),
         new("get_graph", "Return a bounded symbol graph for Canvas or agent reasoning", GraphLookupSchema())
     ];
@@ -120,6 +120,17 @@ public static class McpToolCatalog
         IntegerProperty("depth", "Graph traversal depth."),
         IntegerProperty("limit", "Maximum node/edge count."),
         ArrayProperty("edgeKinds", "Only traverse these edge kinds (calls, references, contains, constructs, inherits, implements, imports). Unset = all.", "string")
+    ], ["repositoryId", "symbolId"]);
+
+    // find_callers/find_callees only: an explicit edgeKinds always wins over wide, so passing both
+    // is never ambiguous — wide only changes what the *default* (no edgeKinds given) resolves to.
+    private static object CallGraphLookupSchema() => Schema([
+        StringProperty("repositoryId", "Repository id."),
+        StringProperty("symbolId", "Symbol id from search_symbols or graph results."),
+        IntegerProperty("depth", "Graph traversal depth."),
+        IntegerProperty("limit", "Maximum node/edge count."),
+        ArrayProperty("edgeKinds", "Only traverse these edge kinds (calls, references, contains, constructs, inherits, implements, imports). Overrides wide when set.", "string"),
+        BooleanProperty("wide", "Ignored if edgeKinds is set. When true, broadens the default edge set to also include references — useful in TypeScript where a real call site (a handler table, a property holding a function) can be modeled as a reference instead of a call. Default false.")
     ], ["repositoryId", "symbolId"]);
 
     private static object Schema(IEnumerable<KeyValuePair<string, object>> properties, string[] required) => new

@@ -251,10 +251,17 @@ public sealed class McpDispatcher
                 // constructs, to see `new Foo()` construction sites alongside plain calls).
                 var requestedKinds = args.TryGetProperty("edgeKinds", out var kindsValue) && kindsValue.ValueKind == JsonValueKind.Array
                     ? kindsValue.EnumerateArray().Select(x => x.GetString()!).ToArray() : null;
+                // TypeScript in particular often models a real usage (a handler dispatch table, a
+                // property holding a function, a decorator argument) as a "references" edge rather
+                // than "calls" — an agent working call-graph-first would otherwise need to already
+                // know to union in "references" itself to avoid missing those. wide:true opts into
+                // that broader default; an explicit edgeKinds always wins over both the narrow and
+                // the wide default, so this never surprises a caller who already specified kinds.
+                var wide = OptionalBool("wide", false);
                 string[]? kinds = tool switch
                 {
-                    "find_callers" => requestedKinds ?? ["calls"],
-                    "find_callees" => requestedKinds ?? ["calls", "constructs"],
+                    "find_callers" => requestedKinds ?? (wide ? ["calls", "references"] : ["calls"]),
+                    "find_callees" => requestedKinds ?? (wide ? ["calls", "constructs", "references"] : ["calls", "constructs"]),
                     "find_references" => ["references"],
                     _ => requestedKinds
                 };
