@@ -2,6 +2,7 @@
   <Project Path="MapRepo.Core/MapRepo.Core.csproj" />
   <Project Path="MapRepo.Modules.CSharp/MapRepo.Modules.CSharp.csproj" />
   <Project Path="MapRepo.Modules.TypeScript/MapRepo.Modules.TypeScript.csproj" />
+  <Project Path="MapRepo.Modules.Cpp/MapRepo.Modules.Cpp.csproj" />
   <Project Path="MapRepo.NativeStore/MapRepo.NativeStore.csproj" />
   <Project Path="MapRepo.Server/MapRepo.Server.csproj" />
 </Solution>
