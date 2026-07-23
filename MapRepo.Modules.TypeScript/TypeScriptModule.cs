@@ -259,8 +259,7 @@ public sealed class TypeScriptModule : IRepositoryLanguageModule, IIncrementalAn
     }
 
     private static IEnumerable<string> EnumerateFiles(string root, IReadOnlyList<string>? excludedPaths) =>
-        Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories).Where(IsSource).Where(path => !Excluded(path, excludedPaths));
-    private static bool Excluded(string path, IReadOnlyList<string>? extra = null) => PathExclusions.IsExcluded(path, extra);
+        PathExclusions.EnumerateFiles(root, "*.*", excludedPaths).Where(IsSource);
     private static bool IsSource(string path) => path.EndsWith(".ts", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".tsx", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".js", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".jsx", StringComparison.OrdinalIgnoreCase);
     private static string Language(string path) => path.EndsWith("x", StringComparison.OrdinalIgnoreCase) ? "tsx" : path.EndsWith("ts", StringComparison.OrdinalIgnoreCase) ? "typescript" : "javascript";
     private static string Relative(string root, string path) => Path.GetRelativePath(root, path).Replace('\\', '/');

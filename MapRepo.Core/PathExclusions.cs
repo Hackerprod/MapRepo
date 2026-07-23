@@ -25,4 +25,34 @@ public static class PathExclusions
         if (extraPatterns is not { Count: > 0 }) return false;
         return extraPatterns.Any(pattern => !string.IsNullOrWhiteSpace(pattern) && path.Contains(pattern, StringComparison.OrdinalIgnoreCase));
     }
+
+    /// <summary>Recursive file search that tolerates a locked/permission-denied subdirectory
+    /// instead of aborting the whole walk — <see cref="Directory.EnumerateFiles(string, string,
+    /// SearchOption)"/> throws as soon as it meets one inaccessible directory anywhere in the
+    /// tree, which a post-hoc <see cref="IsExcluded(string, IReadOnlyList{string}?)"/> filter on
+    /// the results can never prevent. Also skips descending into excluded directories entirely,
+    /// rather than walking them and discarding their files afterward.</summary>
+    public static IEnumerable<string> EnumerateFiles(string root, string searchPattern, IReadOnlyList<string>? extraPatterns = null)
+    {
+        var pending = new Stack<string>();
+        pending.Push(root);
+        while (pending.Count > 0)
+        {
+            var directory = pending.Pop();
+            string[] subdirectories;
+            string[] files;
+            try
+            {
+                subdirectories = Directory.GetDirectories(directory);
+                files = Directory.GetFiles(directory, searchPattern);
+            }
+            catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+            {
+                continue;
+            }
+            foreach (var file in files) yield return file;
+            foreach (var subdirectory in subdirectories)
+                if (!IsExcluded(subdirectory, extraPatterns)) pending.Push(subdirectory);
+        }
+    }
 }

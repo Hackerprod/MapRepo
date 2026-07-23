@@ -37,7 +37,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
         var relationships = new List<RelationshipRecord>();
         var seenSymbols = new HashSet<string>(StringComparer.Ordinal);
         var seenRelationships = new HashSet<string>(StringComparer.Ordinal);
-        if (!Directory.EnumerateFiles(request.Repository.RootPath, "*.cs", SearchOption.AllDirectories).Any(path => !Excluded(path, request.Repository.ExcludedPaths)))
+        if (!PathExclusions.EnumerateFiles(request.Repository.RootPath, "*.cs", request.Repository.ExcludedPaths).Any())
             return new AnalysisSnapshot(request.Repository.Id, CreateGeneration(request.Repository), [], [], [], DateTimeOffset.UtcNow);
         var solutionPath = ResolveSolution(request.Repository);
 
@@ -176,11 +176,10 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
     {
         if (!string.IsNullOrWhiteSpace(repository.SolutionPath)) return Path.GetFullPath(repository.SolutionPath);
         var root = Path.GetFullPath(repository.RootPath);
-        var candidates = Directory.EnumerateFiles(root, "*.*", SearchOption.AllDirectories)
+        var candidates = PathExclusions.EnumerateFiles(root, "*.*", repository.ExcludedPaths)
             .Where(path => path.EndsWith(".sln", StringComparison.OrdinalIgnoreCase)
                 || path.EndsWith(".slnx", StringComparison.OrdinalIgnoreCase)
                 || path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
-            .Where(path => !Excluded(path, repository.ExcludedPaths))
             .Select(path => new { Path = path, Score = ProjectScore(root, path) })
             .OrderByDescending(item => item.Score)
             .ThenBy(item => item.Path.Length)
@@ -349,7 +348,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
         diagnostics.Add("Roslyn could not load the solution; configure a valid .sln/.csproj and MSBuild SDK");
         var scopeRoot = solutionPath is not null && solutionPath.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase)
             ? Path.GetDirectoryName(solutionPath)! : solutionPath is not null ? Path.GetDirectoryName(solutionPath)! : request.Repository.RootPath;
-        var files = Directory.EnumerateFiles(scopeRoot, "*.cs", SearchOption.AllDirectories).Where(path => !Excluded(path, request.Repository.ExcludedPaths));
+        var files = PathExclusions.EnumerateFiles(scopeRoot, "*.cs", request.Repository.ExcludedPaths);
         foreach (var path in files)
         {
             request.CancellationToken.ThrowIfCancellationRequested();
