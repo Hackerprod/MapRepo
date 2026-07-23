@@ -146,6 +146,14 @@ Project-specific scratch/generated folders that aren't in the universal list (a 
 
 Reference `MapRepo.Core`, implement `IRepositoryLanguageModule` (optionally `IIncrementalAnalyzer` + `IRepositoryLifecycle`), emit the common IR, build as `MapRepo.Module*.dll` and copy to `MapRepo.Server/modules/`. The registry discovers it at startup. The internal parser is your choice — Tree-sitter, tsserver, compiler APIs — the MCP contract never changes.
 
+### Why hand-built modules instead of one universal parser
+
+Each language module here is built against that language's own real compiler or language-service backend rather than one generic grammar shared across every language: the C# module runs on Roslyn/MSBuildWorkspace (the same platform the C# compiler itself uses), and the TypeScript module resolves to the TypeScript compiler's own language-service APIs (tsserver-equivalent) when available. A real compiler backend understands actual semantics — type resolution, overload matching, symbol identity that survives a rename — not just a syntax tree, which is what buys the low false-edge rate and precise call/reference resolution this project is built around.
+
+The trade-off is coverage: a hand-built module per language is more accurate but slower to add than plugging in one universal parser that already covers dozens of languages out of the box. That's a deliberate choice, not an oversight — but it does mean MapRepo's language support grows one well-built module at a time.
+
+This is exactly where contribution helps most. If you use a language MapRepo doesn't support yet, a new module is welcome — implement `IRepositoryLanguageModule` as above, backed by whatever fits that language: a real compiler/language service where one exists and semantic accuracy matters, or a lighter syntax-level parser (Tree-sitter and similar) where broad, fast coverage matters more than deep semantics. Deepening an existing module (more edge kinds, better incremental support) is just as welcome. PRs are genuinely wanted here.
+
 ## Web atlas
 
 - **Orbit** (left drag) around the selected node — click any node to make it the pivot; double-click re-roots the graph on it.
