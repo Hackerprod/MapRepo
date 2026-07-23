@@ -19,11 +19,13 @@ public sealed class McpDispatcher
 
     private readonly RepositorySessionManager _manager;
     private readonly IRepositoryStore _store;
+    private readonly ModuleRegistry _modules;
 
-    public McpDispatcher(RepositorySessionManager manager, IRepositoryStore store)
+    public McpDispatcher(RepositorySessionManager manager, IRepositoryStore store, ModuleRegistry modules)
     {
         _manager = manager;
         _store = store;
+        _modules = modules;
     }
 
     public JsonSerializerOptions JsonOptions { get; } = new(JsonSerializerDefaults.Web)
@@ -143,6 +145,17 @@ public sealed class McpDispatcher
                     nextIndex = stoppedAt,
                     note = $"Stopped after {batchResults.Count}/{callArray.Length} call(s): response size budget reached. Resend the remaining calls (starting at index {stoppedAt}) in a new batch."
                 };
+            case "list_modules":
+                // Iterates whatever is actually loaded (built-in registrations plus anything found
+                // by ModuleRegistry.Discover) rather than a hardcoded list, so this never drifts out
+                // of sync with what open_repository can actually resolve for enabledModules.
+                return _modules.Modules
+                    .OrderBy(m => m.Descriptor.Id, StringComparer.Ordinal)
+                    .Select(m => new
+                    {
+                        m.Descriptor.Id, m.Descriptor.DisplayName, m.Descriptor.Languages,
+                        m.Descriptor.Version, m.Descriptor.SupportsSemanticAnalysis
+                    }).ToArray();
             case "list_repositories":
                 var summaries = await _manager.ListAsync(ct);
                 if (OptionalBool("includeDiagnostics", false)) return summaries;

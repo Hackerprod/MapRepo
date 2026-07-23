@@ -22,6 +22,7 @@ public static class McpToolCatalog
             ArrayProperty("excludedPaths", "Extra path substrings (case-insensitive) to skip during indexing and watching, beyond the built-in .git/node_modules/bin/obj/dist/build/coverage list — e.g. a project-specific build-verification scratch folder.", "string"),
             BooleanProperty("allowExternalSymbols", "C# only: when the .sln references a project outside rootPath (a sibling repo via ProjectReference), also index its symbols/edges. Default false keeps every repository's index isolated to its own files.")
         ], ["rootPath"])),
+        new("list_modules", "List every language module actually loaded in this server instance (id, displayName, languages, version, supportsSemanticAnalysis) — the exact set open_repository's enabledModules can filter to. Call this before registering a repository in an unfamiliar language to check whether it's supported yet, instead of indexing and getting an empty result with no explanation.", Schema([], [])),
         new("list_repositories", "List every registered repository with a compact status (id, rootPath, symbols, relationships, indexing, diagnosticCount, textualEvidence). Call this first to discover repositoryId values.", Schema([
             BooleanProperty("includeDiagnostics", "Return the full definition and diagnostics text per repository instead of the compact default. Expensive on repositories with many MSBuild/analysis warnings.")
         ], [])),
