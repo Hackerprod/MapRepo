@@ -45,7 +45,12 @@ builder.Services.AddSingleton(sp =>
         FlushToDisk = builder.Configuration.GetValue("Storage:FlushToDisk", true),
         WriteThrough = builder.Configuration.GetValue("Storage:WriteThrough", true),
         CleanupObsoleteFiles = builder.Configuration.GetValue("Storage:CleanupObsoleteFiles", true),
-        VerifySnapshotPackChecksumsOnOpen = builder.Configuration.GetValue("Storage:VerifyOnOpen", true),
+        // Off by default (matches NativeStoreOptions' own class default): with MaxResidentRepositories
+        // capping how many repos stay hot, any evicted repo's status/open pays this cost on every
+        // call, not just once — full per-segment CRC plus a pack header decode. That's the right
+        // trade for a release-gate or integrity audit, not for routine status/discovery latency in
+        // an agent-facing hot path. Set Storage:VerifyOnOpen=true to opt into the heavier mode.
+        VerifySnapshotPackChecksumsOnOpen = builder.Configuration.GetValue("Storage:VerifyOnOpen", false),
         MaxResidentRepositories = builder.Configuration.GetValue("Storage:MaxResidentRepositories", 2),
         MaxResidentManagedBytes = builder.Configuration.GetValue<long>("Storage:MaxResidentManagedBytes", 256L * 1024 * 1024),
         IdleRepositoryTimeout = TimeSpan.FromMinutes(builder.Configuration.GetValue("Storage:IdleRepositoryMinutes", 10)),
