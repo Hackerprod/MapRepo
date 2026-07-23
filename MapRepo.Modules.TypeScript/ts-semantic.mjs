@@ -28,6 +28,19 @@ const ts = require(path.resolve(args.ts));
 
 const MODULE_ID = 'typescript-syntax'; // stable module id: semantic and syntax engines own the same rows
 const hash = v => createHash('sha256').update(v, 'utf8').digest('hex').slice(0, 24);
+const normalizedPath = value => value.replace(/\\/g, '/');
+const int32 = value => { const b = Buffer.allocUnsafe(4); b.writeInt32LE(value); return b; };
+const stringBytes = value => { const b = Buffer.from(value ?? '', 'utf8'); return [int32(b.length), b]; };
+const canonicalHash = (kind, strings, integers = []) => {
+  const chunks = [Buffer.from([1]), ...stringBytes(kind)];
+  for (const value of strings) chunks.push(...stringBytes(value));
+  for (const value of integers) chunks.push(int32(value));
+  return createHash('sha256').update(Buffer.concat(chunks)).digest('hex').slice(0, 24);
+};
+const declarationId = (lang, project, kind, structuralIdentity, file) =>
+  canonicalHash('declaration', [lang, MODULE_ID, project, kind, structuralIdentity, normalizedPath(file)]);
+const relationshipId = (sourceId, targetId, kind, file, line, column) =>
+  canonicalHash('relationship', [MODULE_ID, sourceId, targetId, kind, normalizedPath(file)], [line, column]);
 const rel = p => path.relative(root, p).replace(/\\/g, '/');
 const EXCLUDED = new Set(['node_modules', 'dist', 'build', 'coverage', '.git', '.tmp', 'bin', 'obj']);
 // "packages" and "Data" are deliberately NOT in this set: they are common names for legitimate,
@@ -114,9 +127,39 @@ function enclosingDecl(node) {
   return null;
 }
 
+function structuralIdentityFor(node, sourceFile = node.getSourceFile()) {
+  const kind = DECL_KINDS.get(node.kind);
+  const typeArity = node.typeParameters?.length ?? 0;
+  const parameters = (node.parameters ?? []).map(parameter => {
+    const modifiers = parameter.modifiers?.map(modifier => modifier.getText(sourceFile)).join('+') ?? '';
+    const type = parameter.type?.getText(sourceFile) ?? '?';
+    const rest = parameter.dotDotDotToken ? 'rest' : '';
+    return `${modifiers}:${rest}:${type.replace(/\s+/g, '')}`;
+  }).join(',');
+  const returnType = node.type?.getText(sourceFile)?.replace(/\s+/g, '') ?? '';
+  // qualifiedName() only walks ancestors whose kind is in DECL_KINDS — arrow functions, function
+  // expressions, blocks and if-statements are not, so two local variables with the same name in two
+  // different callbacks nested inside the same named enclosing scope (e.g. two `onMessage('X', ctx
+  // => { const data = ... })` handlers in the same setup function) collapse to the same
+  // qualifiedName and, for `variable`, would otherwise get the identical structural identity —
+  // discovered via a real collision in a large protocol-handler file. A local variable has no
+  // stable identity beyond its declaration site anyway, so disambiguate it with position.
+  const positional = kind === 'variable' ? `:${node.getStart(sourceFile)}` : '';
+  return `typescript-semantic:v2:${kind}:${qualifiedName(node)}:${typeArity}:${parameters}:${returnType}${positional}`;
+}
+
 function symbolIdFor(node, sourceFile) {
   const file = rel(sourceFile.fileName);
-  return hash(`${file}|${DECL_KINDS.get(node.kind)}|${qualifiedName(node)}`);
+  const kind = DECL_KINDS.get(node.kind);
+  return declarationId(language(file), '(semantic)', kind, structuralIdentityFor(node, sourceFile), file);
+}
+
+function moduleIdentityFor(file) {
+  return `typescript-semantic:v1:module:${normalizedPath(file)}`;
+}
+
+function moduleIdFor(file) {
+  return declarationId(language(file), '(semantic)', 'module', moduleIdentityFor(file), file);
 }
 
 function language(fileName) {
@@ -170,7 +213,8 @@ function analyzeTargets(targetFiles) {
     symbols.push({
       id, repositoryId, project: null, filePath: file, name, qualifiedName: qualifiedName(node),
       kind: DECL_KINDS.get(node.kind), startLine: start.line, startColumn: start.column,
-      endLine: end.line, endColumn: end.column, signature, language: language(file), moduleId: MODULE_ID
+      endLine: end.line, endColumn: end.column, signature, language: language(file), moduleId: MODULE_ID,
+      structuralIdentity: structuralIdentityFor(node, sourceFile)
     });
     return id;
   }
@@ -179,12 +223,13 @@ function analyzeTargets(targetFiles) {
     if (!sourceId || !targetId) return;
     const file = rel(sourceFile.fileName);
     const p = pos(sourceFile, node.getStart(sourceFile));
-    const id = hash(`${sourceId}|${targetId}|${kind}|${file}|${p.line}|${p.column}`);
+    const id = relationshipId(sourceId, targetId, kind, file, p.line, p.column);
     if (seenEdges.has(id)) return;
     seenEdges.add(id);
     relationships.push({
       id, repositoryId, sourceId, targetId, kind, filePath: file,
-      line: p.line, column: p.column, confidence, language: language(file), moduleId: MODULE_ID
+      line: p.line, column: p.column, confidence, language: language(file), moduleId: MODULE_ID,
+      structuralIdentity: `relationship:v1:${sourceId}:${targetId}:${kind}:${normalizedPath(file)}:${p.line}:${p.column}`
     });
   }
 
@@ -213,14 +258,15 @@ function analyzeTargets(targetFiles) {
 
   for (const sf of targetFiles) {
     const file = rel(sf.fileName);
-    const moduleSymbolId = hash(`${file}|module`);
+    const moduleSymbolId = moduleIdFor(file);
     if (!seenSymbols.has(moduleSymbolId)) {
       seenSymbols.add(moduleSymbolId);
       symbols.push({
         id: moduleSymbolId, repositoryId, project: null, filePath: file, name: path.basename(file),
         qualifiedName: file, kind: 'module', startLine: 1, startColumn: 1,
         endLine: sf.getLineAndCharacterOfPosition(sf.getEnd()).line + 1, endColumn: 1,
-        signature: file, language: language(file), moduleId: MODULE_ID
+        signature: file, language: language(file), moduleId: MODULE_ID,
+        structuralIdentity: moduleIdentityFor(file)
       });
     }
     // The edge SOURCE for calls/constructs/references must be a callable owner, not just the
@@ -268,7 +314,7 @@ function analyzeTargets(targetFiles) {
         const resolved = ts.resolveModuleName(node.moduleSpecifier.text, sf.fileName, program.getCompilerOptions(), ts.sys);
         const resolvedFile = resolved?.resolvedModule?.resolvedFileName;
         if (resolvedFile && underRoot(resolvedFile))
-          addEdge(moduleSymbolId, hash(`${rel(resolvedFile)}|module`), 'imports', sf, node, 'semantic');
+          addEdge(moduleSymbolId, moduleIdFor(rel(resolvedFile)), 'imports', sf, node, 'semantic');
       }
       else if (ts.isIdentifier(node) && !ts.isPropertyAccessExpression(node.parent) && node.parent
         && !DECL_KINDS.has(node.parent.kind) && !ts.isImportSpecifier(node.parent) && !ts.isImportClause(node.parent)) {

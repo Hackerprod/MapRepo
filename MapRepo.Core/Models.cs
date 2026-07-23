@@ -42,7 +42,11 @@ public sealed record SymbolRecord(
     int EndColumn,
     string Signature,
     string Language,
-    string ModuleId);
+    string ModuleId,
+    /// <summary>Optional canonical identity string a module can derive independently of Id's hash
+    /// (e.g. containing-type chain + kind + parameter shapes) — NativeStore persists it for stronger
+    /// duplicate diagnostics; null is fine for modules that don't compute one (SQLite ignores it).</summary>
+    string? StructuralIdentity = null);
 
 public sealed record RelationshipRecord(
     string Id,
@@ -55,7 +59,8 @@ public sealed record RelationshipRecord(
     int Column,
     string Confidence,
     string Language,
-    string ModuleId);
+    string ModuleId,
+    string? StructuralIdentity = null);
 
 public sealed record AnalysisSnapshot(
     string RepositoryId,
@@ -112,7 +117,47 @@ public sealed record SymbolDetail(
     SymbolRecord Symbol,
     IReadOnlyList<RelationshipRecord> Outgoing,
     IReadOnlyList<RelationshipRecord> Incoming,
-    IReadOnlyList<SymbolRecord> Neighbors);
+    IReadOnlyList<SymbolRecord> Neighbors,
+    bool OutgoingTruncated = false,
+    bool IncomingTruncated = false,
+    bool NeighborsTruncated = false);
+
+/// <summary>One analyzer module's incremental delta for a set of changed files, as part of a larger
+/// multi-module commit.</summary>
+public sealed record FileModuleDelta(
+    string ModuleId,
+    IReadOnlyList<string> FilePaths,
+    IReadOnlyList<SymbolRecord> Symbols,
+    IReadOnlyList<RelationshipRecord> Relationships);
+
+/// <summary>Complete replacement for one analyzer module, committed with other module/file changes as one generation.</summary>
+public sealed record ModuleSnapshotDelta(
+    string ModuleId,
+    IReadOnlyList<SymbolRecord> Symbols,
+    IReadOnlyList<RelationshipRecord> Relationships);
+
+/// <summary>
+/// Atomic repository mutation. Full/module replacements and incremental file revisions are resolved
+/// against one immutable input generation and become visible together through one durable commit.
+/// </summary>
+public sealed record RepositoryMutation(
+    string RepositoryId,
+    string Generation,
+    DateTimeOffset IndexedAt,
+    IReadOnlyList<string> Diagnostics,
+    bool ReplaceAll,
+    bool PreserveExistingDiagnostics,
+    IReadOnlyList<ModuleSnapshotDelta> ModuleReplacements,
+    IReadOnlyList<FileModuleDelta> FileDeltas);
+
+/// <summary>Storage capability used by a caller that wants to publish a mixed multi-module batch as
+/// one atomic commit. Optional: a store can implement only IRepositoryStore and ignore this.</summary>
+public interface ITransactionalRepositoryStore
+{
+    Task ApplyMutationAsync(
+        RepositoryMutation mutation,
+        CancellationToken cancellationToken = default);
+}
 
 public sealed record SourceSlice(
     string RepositoryId,

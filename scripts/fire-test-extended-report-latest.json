@@ -1,7 +1,7 @@
 ﻿{
-    "baseUrl":  "http://127.0.0.1:5087",
+    "baseUrl":  "http://127.0.0.1:5099",
     "repositoryId":  "skynet-steam-emulator",
-    "generatedAt":  "2026-07-22T09:25:00.8540248-07:00",
+    "generatedAt":  "2026-07-23T05:43:52.4456271-07:00",
     "total":  38,
     "failed":  0,
     "critical":  0,
@@ -12,7 +12,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  67.4,
+                       "ms":  125.9,
                        "details":  "status=ok",
                        "data":  null
                    },
@@ -21,7 +21,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  15.5,
+                       "ms":  136.1,
                        "details":  "service=map-repo-server",
                        "data":  null
                    },
@@ -30,7 +30,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  19.3,
+                       "ms":  62.8,
                        "details":  "protocol=2024-11-05",
                        "data":  null
                    },
@@ -39,7 +39,7 @@
                        "category":  "contract",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  16.2,
+                       "ms":  30.4,
                        "details":  "tools=18, bad=0, missing=",
                        "data":  {
                                     "names":  [
@@ -69,21 +69,21 @@
                        "category":  "lifecycle",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  36.5,
-                       "details":  "repo=skynet-steam-emulator, ms=36.5, watcher=True",
+                       "ms":  33.6,
+                       "details":  "repo=skynet-steam-emulator, ms=33.6, watcher=True",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260722162129345",
-                                    "symbols":  46880,
-                                    "relationships":  85165,
-                                    "lastIndexedAt":  "2026-07-22T16:21:29.3452876+00:00",
+                                    "generation":  "20260723123838619",
+                                    "symbols":  46911,
+                                    "relationships":  85152,
+                                    "lastIndexedAt":  "2026-07-23T12:38:38.6197047+00:00",
                                     "watcherActive":  true,
                                     "indexing":  false,
                                     "diagnostics":  [
 
                                                     ],
                                     "indexSummary":  [
-                                                         "ts-semantic (full): 29 files, 13863 symbols, 39832 edges"
+                                                         "ts-semantic (full): 29 files, 13894 symbols, 39823 edges"
                                                      ]
                                 }
                    },
@@ -92,21 +92,21 @@
                        "category":  "lifecycle",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  25.9,
-                       "details":  "symbols=46880, edges=85165, diagnostics=0",
+                       "ms":  23.7,
+                       "details":  "symbols=46911, edges=85152, diagnostics=0",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260722162129345",
-                                    "symbols":  46880,
-                                    "relationships":  85165,
-                                    "lastIndexedAt":  "2026-07-22T16:21:29.3452876+00:00",
+                                    "generation":  "20260723123838619",
+                                    "symbols":  46911,
+                                    "relationships":  85152,
+                                    "lastIndexedAt":  "2026-07-23T12:38:38.6197047+00:00",
                                     "watcherActive":  true,
                                     "indexing":  false,
                                     "diagnostics":  [
 
                                                     ],
                                     "indexSummary":  [
-                                                         "ts-semantic (full): 29 files, 13863 symbols, 39832 edges"
+                                                         "ts-semantic (full): 29 files, 13894 symbols, 39823 edges"
                                                      ]
                                 }
                    },
@@ -115,8 +115,8 @@
                        "category":  "tokens",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  30.8,
-                       "details":  "repos=4, bytes=749, ms=30.8",
+                       "ms":  99.9,
+                       "details":  "repos=4, bytes=750, ms=99.9",
                        "data":  null
                    },
                    {
@@ -124,13 +124,13 @@
                        "category":  "overview",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  25.4,
-                       "details":  "symbols=46880, ms=25.4, external=False",
+                       "ms":  24.4,
+                       "details":  "symbols=46911, ms=24.4, external=False",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260722162129345",
-                                    "symbols":  46880,
-                                    "relationships":  85165,
+                                    "generation":  "20260723123838619",
+                                    "symbols":  46911,
+                                    "relationships":  85152,
                                     "kinds":  [
                                                   {
                                                       "key":  "Method",
@@ -158,11 +158,11 @@
                                                   },
                                                   {
                                                       "key":  "variable",
-                                                      "count":  1307
+                                                      "count":  1337
                                                   },
                                                   {
                                                       "key":  "method",
-                                                      "count":  423
+                                                      "count":  424
                                                   },
                                                   {
                                                       "key":  "function",
@@ -192,11 +192,11 @@
                                                       },
                                                       {
                                                           "key":  "typescript",
-                                                          "count":  13768
+                                                          "count":  13775
                                                       },
                                                       {
                                                           "key":  "javascript",
-                                                          "count":  95
+                                                          "count":  119
                                                       }
                                                   ],
                                     "projects":  [
@@ -206,21 +206,21 @@
                                                      },
                                                      {
                                                          "key":  "(none)",
-                                                         "count":  13863
+                                                         "count":  13894
                                                      }
                                                  ],
                                     "edgeKinds":  [
                                                       {
                                                           "key":  "contains",
-                                                          "count":  46656
+                                                          "count":  46659
                                                       },
                                                       {
                                                           "key":  "references",
-                                                          "count":  33473
+                                                          "count":  33461
                                                       },
                                                       {
                                                           "key":  "calls",
-                                                          "count":  4581
+                                                          "count":  4577
                                                       },
                                                       {
                                                           "key":  "constructs",
@@ -250,7 +250,7 @@
                                                      },
                                                      {
                                                          "key":  "SKYNET server/GC/570/modules/Lobby.ts",
-                                                         "count":  396
+                                                         "count":  400
                                                      },
                                                      {
                                                          "key":  "SKYNET server/Services/GameCoordinator/GameCoordinatorScriptPlugin.cs",
@@ -266,7 +266,7 @@
                                                      },
                                                      {
                                                          "key":  "SKYNET server/GC/570/modules/Party.ts",
-                                                         "count":  114
+                                                         "count":  115
                                                      },
                                                      {
                                                          "key":  "SKYNET server/Services/DotaGuildStore.cs",
@@ -277,12 +277,12 @@
                                                          "count":  103
                                                      },
                                                      {
-                                                         "key":  "SKYNET server/Services/DotaPartyStore.cs",
+                                                         "key":  "SKYNET server/GC/570/modules/Chat.ts",
                                                          "count":  82
                                                      },
                                                      {
-                                                         "key":  "SKYNET server/GC/570/modules/Chat.ts",
-                                                         "count":  80
+                                                         "key":  "SKYNET server/Services/DotaPartyStore.cs",
+                                                         "count":  82
                                                      },
                                                      {
                                                          "key":  "SKYNET server/GC/570/modules/Teams.ts",
@@ -313,8 +313,8 @@
                                                          "count":  54
                                                      },
                                                      {
-                                                         "key":  "SKYNET server/GC/570/modules/Match.ts",
-                                                         "count":  51
+                                                         "key":  "SKYNET server/wwwroot/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js",
+                                                         "count":  53
                                                      }
                                                  ],
                                     "hubs":  [
@@ -326,7 +326,7 @@
                                                                     "kind":  "Method",
                                                                     "project":  "SKYNET server",
                                                                     "filePath":  "SKYNET server/Services/DotaStatsStore.cs",
-                                                                    "startLine":  3248,
+                                                                    "startLine":  3252,
                                                                     "signature":  "void DotaStatsStore.Add(SqliteCommand command, string name, object? value)"
                                                                 },
                                                      "degree":  689
@@ -351,7 +351,7 @@
                                                                     "kind":  "Method",
                                                                     "project":  "SKYNET server",
                                                                     "filePath":  "SKYNET server/Services/DotaStatsStore.cs",
-                                                                    "startLine":  3290,
+                                                                    "startLine":  3294,
                                                                     "signature":  "uint DotaStatsStore.U32(SqliteDataReader reader, string name)"
                                                                 },
                                                      "degree":  337
@@ -370,7 +370,7 @@
                                                  },
                                                  {
                                                      "symbol":  {
-                                                                    "id":  "58f053194a5f65826b67c73a",
+                                                                    "id":  "10bd9ca7b3a1cdbefff051f1",
                                                                     "name":  "gc.ts",
                                                                     "qualifiedName":  "SKYNET server/GC/570/framework/gc.ts",
                                                                     "kind":  "module",
@@ -415,7 +415,7 @@
                                                                     "kind":  "Method",
                                                                     "project":  "SKYNET server",
                                                                     "filePath":  "SKYNET server/Services/DotaStatsStore.cs",
-                                                                    "startLine":  3018,
+                                                                    "startLine":  3022,
                                                                     "signature":  "DotaStatsMatchPlayer DotaStatsStore.ReadMatchPlayer(SqliteDataReader reader)"
                                                                 },
                                                      "degree":  202
@@ -435,19 +435,6 @@
                                                  },
                                                  {
                                                      "symbol":  {
-                                                                    "id":  "8ef7a6a24bc756ae1b6c2157",
-                                                                    "name":  "BuildSampleState",
-                                                                    "qualifiedName":  "SKYNET_server.Persistence.PersistenceRoundTripCheck.BuildSampleState()",
-                                                                    "kind":  "Method",
-                                                                    "project":  "SKYNET server",
-                                                                    "filePath":  "SKYNET server/Persistence/PersistenceRoundTripCheck.cs",
-                                                                    "startLine":  56,
-                                                                    "signature":  "ApiState PersistenceRoundTripCheck.BuildSampleState()"
-                                                                },
-                                                     "degree":  179
-                                                 },
-                                                 {
-                                                     "symbol":  {
                                                                     "id":  "4e35d61162af62d7927f75f1",
                                                                     "name":  "ToTsUInt32",
                                                                     "qualifiedName":  "SKYNET_server.Services.ScriptExchangeHost.ToTsUInt32(uint)",
@@ -456,6 +443,19 @@
                                                                     "filePath":  "SKYNET server/Services/GameCoordinator/GameCoordinatorScriptPlugin.cs",
                                                                     "startLine":  3750,
                                                                     "signature":  "TsValue ScriptExchangeHost.ToTsUInt32(uint value)"
+                                                                },
+                                                     "degree":  179
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "8ef7a6a24bc756ae1b6c2157",
+                                                                    "name":  "BuildSampleState",
+                                                                    "qualifiedName":  "SKYNET_server.Persistence.PersistenceRoundTripCheck.BuildSampleState()",
+                                                                    "kind":  "Method",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Persistence/PersistenceRoundTripCheck.cs",
+                                                                    "startLine":  56,
+                                                                    "signature":  "ApiState PersistenceRoundTripCheck.BuildSampleState()"
                                                                 },
                                                      "degree":  179
                                                  },
@@ -486,19 +486,6 @@
                                                  },
                                                  {
                                                      "symbol":  {
-                                                                    "id":  "e6df494d5c9eeea4a2a43b48",
-                                                                    "name":  "Lobby.ts",
-                                                                    "qualifiedName":  "SKYNET server/GC/570/modules/Lobby.ts",
-                                                                    "kind":  "module",
-                                                                    "filePath":  "SKYNET server/GC/570/modules/Lobby.ts",
-                                                                    "startLine":  1,
-                                                                    "endLine":  2021,
-                                                                    "signature":  "SKYNET server/GC/570/modules/Lobby.ts"
-                                                                },
-                                                     "degree":  153
-                                                 },
-                                                 {
-                                                     "symbol":  {
                                                                     "id":  "6c46077f952921149ca4da66",
                                                                     "name":  "ToNumber",
                                                                     "qualifiedName":  "SKYNET_server.Services.ScriptExchangeHost.ToNumber(TypeSharp.VM.Memory.TsValue, string)",
@@ -507,6 +494,19 @@
                                                                     "filePath":  "SKYNET server/Services/GameCoordinator/GameCoordinatorScriptPlugin.cs",
                                                                     "startLine":  3984,
                                                                     "signature":  "double ScriptExchangeHost.ToNumber(TsValue value, string path = \"value\")"
+                                                                },
+                                                     "degree":  153
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "9f8b7dd5f1f1b37b4e95eef1",
+                                                                    "name":  "Lobby.ts",
+                                                                    "qualifiedName":  "SKYNET server/GC/570/modules/Lobby.ts",
+                                                                    "kind":  "module",
+                                                                    "filePath":  "SKYNET server/GC/570/modules/Lobby.ts",
+                                                                    "startLine":  1,
+                                                                    "endLine":  2019,
+                                                                    "signature":  "SKYNET server/GC/570/modules/Lobby.ts"
                                                                 },
                                                      "degree":  153
                                                  },
@@ -525,7 +525,7 @@
                                                  },
                                                  {
                                                      "symbol":  {
-                                                                    "id":  "880bd912f62ad931a7f8196c",
+                                                                    "id":  "7bda124ab8b75ec088e2c131",
                                                                     "name":  "jquery.validate.unobtrusive.js",
                                                                     "qualifiedName":  "SKYNET server/wwwroot/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js",
                                                                     "kind":  "module",
@@ -551,28 +551,28 @@
                                                  },
                                                  {
                                                      "symbol":  {
-                                                                    "id":  "71cda4a57018268a7d3d456e",
-                                                                    "name":  "HandlerContext",
-                                                                    "kind":  "interface",
-                                                                    "filePath":  "SKYNET server/GC/570/framework/gc.ts",
-                                                                    "startLine":  19,
-                                                                    "endLine":  32,
-                                                                    "signature":  "export interface HandlerContext\u003cTRequest, TResponse\u003e {"
-                                                                },
-                                                     "degree":  117
-                                                 },
-                                                 {
-                                                     "symbol":  {
                                                                     "id":  "249913ff2937f7d3b5a8c71d",
                                                                     "name":  "ReadGlobalStats",
                                                                     "qualifiedName":  "SKYNET_server.Services.DotaStatsStore.ReadGlobalStats(Microsoft.Data.Sqlite.SqliteConnection, uint, Microsoft.Data.Sqlite.SqliteTransaction?)",
                                                                     "kind":  "Method",
                                                                     "project":  "SKYNET server",
                                                                     "filePath":  "SKYNET server/Services/DotaStatsStore.cs",
-                                                                    "startLine":  2172,
+                                                                    "startLine":  2176,
                                                                     "signature":  "DotaStatsGlobalStats? DotaStatsStore.ReadGlobalStats(SqliteConnection connection, uint accountId, SqliteTransaction? transaction = null)"
                                                                 },
                                                      "degree":  117
+                                                 },
+                                                 {
+                                                     "symbol":  {
+                                                                    "id":  "e78344380ce3344a47c0dcf0",
+                                                                    "name":  "ScriptHostDispatcher",
+                                                                    "qualifiedName":  "SKYNET_server.Services.ScriptHostDispatcher",
+                                                                    "kind":  "NamedType",
+                                                                    "project":  "SKYNET server",
+                                                                    "filePath":  "SKYNET server/Services/GameCoordinator/GameCoordinatorScriptPlugin.cs",
+                                                                    "startLine":  392
+                                                                },
+                                                     "degree":  116
                                                  }
                                              ]
                                 }
@@ -582,7 +582,7 @@
                        "category":  "isolation",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  37.8,
+                       "ms":  18.7,
                        "details":  "parentRelativeFiles=0",
                        "data":  [
 
@@ -593,7 +593,7 @@
                        "category":  "isolation",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  37.7,
+                       "ms":  177,
                        "details":  "absoluteFiles=0",
                        "data":  [
 
@@ -604,7 +604,7 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  16.2,
+                       "ms":  18.8,
                        "details":  "count=2, lines=8,19",
                        "data":  [
                                     {
@@ -640,7 +640,7 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  15,
+                       "ms":  195.5,
                        "details":  "file=SKYNET server/Certificate/NetworkingCertManager.cs, line=63",
                        "data":  {
                                     "symbol":  {
@@ -660,7 +660,7 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  19.2,
+                       "ms":  100.2,
                        "details":  "count=1",
                        "data":  [
                                     {
@@ -682,7 +682,7 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  18,
+                       "ms":  35.7,
                        "details":  "count=1",
                        "data":  [
                                     {
@@ -705,11 +705,11 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  16,
+                       "ms":  74.6,
                        "details":  "file=SKYNET server/GC/570/modules/Guilds.ts, line=117",
                        "data":  {
                                     "symbol":  {
-                                                   "id":  "d859e28181328a28eec39da7",
+                                                   "id":  "4d203ffcd5ebf4ba03cd9355",
                                                    "name":  "requestGuildData",
                                                    "qualifiedName":  "Guilds.requestGuildData",
                                                    "kind":  "method",
@@ -726,11 +726,11 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  15.7,
+                       "ms":  22.1,
                        "details":  "file=SKYNET server/GC/570/generated/dota.ts, line=21057",
                        "data":  {
                                     "symbol":  {
-                                                   "id":  "0b491ecce437e8d8462e0e05",
+                                                   "id":  "eef93963be6d767343bcaa94",
                                                    "name":  "GCToClientTeamsInfo",
                                                    "qualifiedName":  "Msg.GCToClientTeamsInfo",
                                                    "kind":  "property",
@@ -746,8 +746,8 @@
                        "category":  "performance",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  38,
-                       "details":  "count=0, ms=38",
+                       "ms":  26.8,
+                       "details":  "count=0, ms=26.8",
                        "data":  null
                    },
                    {
@@ -755,7 +755,7 @@
                        "category":  "filters",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  17.1,
+                       "ms":  19.7,
                        "details":  "count=2, bad=0",
                        "data":  null
                    },
@@ -764,7 +764,7 @@
                        "category":  "filters",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  14,
+                       "ms":  20.9,
                        "details":  "count=2, bad=0",
                        "data":  null
                    },
@@ -773,7 +773,7 @@
                        "category":  "contract",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  15.8,
+                       "ms":  23,
                        "details":  "hasRelationships=True",
                        "data":  {
                                     "symbol":  {
@@ -824,7 +824,7 @@
                        "category":  "contract",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  25.7,
+                       "ms":  95.4,
                        "details":  "name=CreateDbContext",
                        "data":  {
                                     "symbol":  {
@@ -898,7 +898,7 @@
                        "category":  "source",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  36.3,
+                       "ms":  35.4,
                        "details":  "lines=6,8,17,19",
                        "data":  [
                                     {
@@ -942,7 +942,7 @@
                        "category":  "source",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  13.2,
+                       "ms":  22,
                        "details":  "start=8, end=14, truncated=False",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
@@ -959,7 +959,7 @@
                        "category":  "source",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  21.2,
+                       "ms":  40.1,
                        "details":  "lineCount=400, truncated=True",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
@@ -976,7 +976,7 @@
                        "category":  "errors",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  14.2,
+                       "ms":  21.7,
                        "details":  "isError=True, text=Path escapes the repository root",
                        "data":  null
                    },
@@ -985,7 +985,7 @@
                        "category":  "errors",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  2,
+                       "ms":  2.6,
                        "details":  "isError=True, text=startLine (30) is greater than endLine (1); pass clamp=true to auto-correct instead of erroring",
                        "data":  null
                    },
@@ -994,7 +994,7 @@
                        "category":  "errors",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  0.9,
+                       "ms":  1.9,
                        "details":  "isError=True, text=File not found: does/not/exist.cs",
                        "data":  null
                    },
@@ -1003,14 +1003,23 @@
                        "category":  "graph",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  18.5,
+                       "ms":  26.7,
                        "details":  "callableCallers=1",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260722162129345",
+                                    "generation":  "20260723123838619",
                                     "nodes":  [
                                                   {
-                                                      "id":  "681e53c30da7c8a0d33701ad",
+                                                      "id":  "ed6188c666846d0e099bfcbc",
+                                                      "name":  "summarizeMatchStateHistory",
+                                                      "kind":  "function",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "startLine":  257,
+                                                      "endLine":  289,
+                                                      "signature":  "function summarizeMatchStateHistory("
+                                                  },
+                                                  {
+                                                      "id":  "d5a80d5914a8af8d986151d2",
                                                       "name":  "matchStateHistory",
                                                       "qualifiedName":  "Match.matchStateHistory",
                                                       "kind":  "method",
@@ -1018,21 +1027,12 @@
                                                       "startLine":  145,
                                                       "endLine":  153,
                                                       "signature":  "private matchStateHistory(ctx: RawMessageContext): boolean {"
-                                                  },
-                                                  {
-                                                      "id":  "7862fc5eaac3a4fe8b5e1357",
-                                                      "name":  "summarizeMatchStateHistory",
-                                                      "kind":  "function",
-                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
-                                                      "startLine":  257,
-                                                      "endLine":  289,
-                                                      "signature":  "function summarizeMatchStateHistory("
                                                   }
                                               ],
                                     "edges":  [
                                                   {
-                                                      "sourceId":  "681e53c30da7c8a0d33701ad",
-                                                      "targetId":  "7862fc5eaac3a4fe8b5e1357",
+                                                      "sourceId":  "d5a80d5914a8af8d986151d2",
+                                                      "targetId":  "ed6188c666846d0e099bfcbc",
                                                       "kind":  "calls",
                                                       "filePath":  "SKYNET server/GC/570/modules/Match.ts",
                                                       "lines":  [
@@ -1048,11 +1048,11 @@
                        "category":  "graph",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  13.7,
+                       "ms":  25.9,
                        "details":  "constructEdges=1",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260722162129345",
+                                    "generation":  "20260723123838619",
                                     "nodes":  [
                                                   {
                                                       "id":  "1fc23afac5121e1bf6166c15",
@@ -1093,14 +1093,23 @@
                        "category":  "graph",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  18.3,
+                       "ms":  23,
                        "details":  "edges=1, bad=0",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260722162129345",
+                                    "generation":  "20260723123838619",
                                     "nodes":  [
                                                   {
-                                                      "id":  "681e53c30da7c8a0d33701ad",
+                                                      "id":  "ed6188c666846d0e099bfcbc",
+                                                      "name":  "summarizeMatchStateHistory",
+                                                      "kind":  "function",
+                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
+                                                      "startLine":  257,
+                                                      "endLine":  289,
+                                                      "signature":  "function summarizeMatchStateHistory("
+                                                  },
+                                                  {
+                                                      "id":  "d5a80d5914a8af8d986151d2",
                                                       "name":  "matchStateHistory",
                                                       "qualifiedName":  "Match.matchStateHistory",
                                                       "kind":  "method",
@@ -1108,21 +1117,12 @@
                                                       "startLine":  145,
                                                       "endLine":  153,
                                                       "signature":  "private matchStateHistory(ctx: RawMessageContext): boolean {"
-                                                  },
-                                                  {
-                                                      "id":  "7862fc5eaac3a4fe8b5e1357",
-                                                      "name":  "summarizeMatchStateHistory",
-                                                      "kind":  "function",
-                                                      "filePath":  "SKYNET server/GC/570/modules/Match.ts",
-                                                      "startLine":  257,
-                                                      "endLine":  289,
-                                                      "signature":  "function summarizeMatchStateHistory("
                                                   }
                                               ],
                                     "edges":  [
                                                   {
-                                                      "sourceId":  "681e53c30da7c8a0d33701ad",
-                                                      "targetId":  "7862fc5eaac3a4fe8b5e1357",
+                                                      "sourceId":  "d5a80d5914a8af8d986151d2",
+                                                      "targetId":  "ed6188c666846d0e099bfcbc",
                                                       "kind":  "calls",
                                                       "filePath":  "SKYNET server/GC/570/modules/Match.ts",
                                                       "lines":  [
@@ -1138,14 +1138,14 @@
                        "category":  "graph",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  19,
+                       "ms":  21.9,
                        "details":  "references=1",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260722162129345",
+                                    "generation":  "20260723123838619",
                                     "nodes":  [
                                                   {
-                                                      "id":  "0b491ecce437e8d8462e0e05",
+                                                      "id":  "eef93963be6d767343bcaa94",
                                                       "name":  "GCToClientTeamsInfo",
                                                       "qualifiedName":  "Msg.GCToClientTeamsInfo",
                                                       "kind":  "property",
@@ -1154,7 +1154,7 @@
                                                       "signature":  "GCToClientTeamsInfo: MessageId;"
                                                   },
                                                   {
-                                                      "id":  "cae2c75dd758e57702e64f13",
+                                                      "id":  "afb070e5ed5952caf7f20d30",
                                                       "name":  "myTeamInfo",
                                                       "qualifiedName":  "Profile.myTeamInfo",
                                                       "kind":  "method",
@@ -1166,8 +1166,8 @@
                                               ],
                                     "edges":  [
                                                   {
-                                                      "sourceId":  "cae2c75dd758e57702e64f13",
-                                                      "targetId":  "0b491ecce437e8d8462e0e05",
+                                                      "sourceId":  "afb070e5ed5952caf7f20d30",
+                                                      "targetId":  "eef93963be6d767343bcaa94",
                                                       "kind":  "references",
                                                       "filePath":  "SKYNET server/GC/570/modules/Profile.ts",
                                                       "lines":  [
@@ -1183,7 +1183,7 @@
                        "category":  "batch",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  20.9,
+                       "ms":  261.5,
                        "details":  "results=3, ok=2, failed=1, firstTruncated=False",
                        "data":  {
                                     "results":  [
@@ -1248,7 +1248,7 @@
                        "category":  "tokens",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  115,
+                       "ms":  104.1,
                        "details":  "mcpCount=0, rgCount=21, diagnostic=True",
                        "data":  {
                                     "mcp":  {
@@ -1266,7 +1266,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  22.8,
+                       "ms":  28.7,
                        "details":  "code=-32700, message=\u0027b\u0027 is an invalid start of a property name. Expected a \u0027\"\u0027. LineNumber: 0 | BytePositionInLine: 1.",
                        "data":  null
                    },
@@ -1275,7 +1275,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  15.6,
+                       "ms":  21.5,
                        "details":  "code=-32601, message=Method not found: no/such/method",
                        "data":  null
                    },
@@ -1284,7 +1284,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  2093.8,
+                       "ms":  2113,
                        "details":  "sse=True, session=True",
                        "data":  null
                    },
@@ -1293,7 +1293,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  66.6,
+                       "ms":  77.7,
                        "details":  "status=400",
                        "data":  null
                    },
@@ -1302,13 +1302,13 @@
                        "category":  "tokens",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  17.9,
+                       "ms":  155.7,
                        "details":  "bytes=1436",
                        "data":  {
                                     "items":  [
                                                   {
                                                       "symbol":  {
-                                                                     "id":  "3ac6aa491b9eea33a0e8c129",
+                                                                     "id":  "915feb621086b4f3b8020ec7",
                                                                      "name":  "msg",
                                                                      "qualifiedName":  "CMsgGCToClientApplyRemoteConVars.msg",
                                                                      "kind":  "property",
@@ -1320,7 +1320,7 @@
                                                   },
                                                   {
                                                       "symbol":  {
-                                                                     "id":  "1b12c670caa2226930e31bee",
+                                                                     "id":  "a4bdd4fc68a5706c718eab18",
                                                                      "name":  "msg",
                                                                      "qualifiedName":  "CMsgGCToServerApplyRemoteConVars.msg",
                                                                      "kind":  "property",
@@ -1332,26 +1332,13 @@
                                                   },
                                                   {
                                                       "symbol":  {
-                                                                     "id":  "0d3cf723e88a2e54d2ebb7e9",
+                                                                     "id":  "eee7fa2ba87dc54c31197291",
                                                                      "name":  "Msg",
                                                                      "kind":  "variable",
                                                                      "filePath":  "SKYNET server/GC/570/generated/dota.ts",
                                                                      "startLine":  20470,
                                                                      "endLine":  22886,
                                                                      "signature":  "Msg: {"
-                                                                 },
-                                                      "score":  100
-                                                  },
-                                                  {
-                                                      "symbol":  {
-                                                                     "id":  "87b358053b1eed21dbd3ea6c",
-                                                                     "name":  "Msg",
-                                                                     "qualifiedName":  "CMsgGCToClientApplyRemoteConVars.Msg",
-                                                                     "kind":  "Property",
-                                                                     "project":  "SKYNET server",
-                                                                     "filePath":  "SKYNET server/Services/GameCoordinator/Generated/base_gcmessages.cs",
-                                                                     "startLine":  1799,
-                                                                     "signature":  "CMsgApplyRemoteConVars CMsgGCToClientApplyRemoteConVars.Msg"
                                                                  },
                                                       "score":  100
                                                   },
@@ -1365,6 +1352,19 @@
                                                                      "filePath":  "SKYNET server/Services/GameCoordinator/Generated/base_gcmessages.cs",
                                                                      "startLine":  1811,
                                                                      "signature":  "CMsgApplyRemoteConVars CMsgGCToServerApplyRemoteConVars.Msg"
+                                                                 },
+                                                      "score":  100
+                                                  },
+                                                  {
+                                                      "symbol":  {
+                                                                     "id":  "87b358053b1eed21dbd3ea6c",
+                                                                     "name":  "Msg",
+                                                                     "qualifiedName":  "CMsgGCToClientApplyRemoteConVars.Msg",
+                                                                     "kind":  "Property",
+                                                                     "project":  "SKYNET server",
+                                                                     "filePath":  "SKYNET server/Services/GameCoordinator/Generated/base_gcmessages.cs",
+                                                                     "startLine":  1799,
+                                                                     "signature":  "CMsgApplyRemoteConVars CMsgGCToClientApplyRemoteConVars.Msg"
                                                                  },
                                                       "score":  100
                                                   }

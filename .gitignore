@@ -4,6 +4,7 @@ MapRepo.Server/data/
 MapRepo.Server/data-v2/
 MapRepo.Server/data-v3/
 MapRepo.Server/data-v4/
+MapRepo.Server/data-native-v2/
 .claude
 MapRepo.Server/tools/node_modules/
 MapRepo.Server/tools/package-lock.json

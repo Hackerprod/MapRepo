@@ -4,6 +4,7 @@
     <ProjectReference Include="..\MapRepo.Core\MapRepo.Core.csproj" />
     <ProjectReference Include="..\MapRepo.Modules.CSharp\MapRepo.Modules.CSharp.csproj" />
     <ProjectReference Include="..\MapRepo.Modules.TypeScript\MapRepo.Modules.TypeScript.csproj" />
+    <ProjectReference Include="..\MapRepo.NativeStore\MapRepo.NativeStore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +18,8 @@
          registered repository's index) into the publish output. -->
     <Content Remove="data-v4/**" />
     <None Remove="data-v4/**" />
+    <Content Remove="data-native-v2/**" />
+    <None Remove="data-native-v2/**" />
     <Content Remove="tools/node_modules/**" />
     <None Remove="tools/node_modules/**" />
   </ItemGroup>

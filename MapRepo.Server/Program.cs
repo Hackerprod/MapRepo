@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 using MapRepo.Core;
 using MapRepo.Modules.CSharp;
 using MapRepo.Modules.TypeScript;
+using MapRepo.NativeStore;
 using MapRepo.Server;
 
 // A Windows Service starts with its working directory in System32, not the install folder —
@@ -27,8 +28,48 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
-builder.Services.AddSingleton<SqliteRepositoryStore>();
-builder.Services.AddSingleton<IRepositoryStore>(sp => sp.GetRequiredService<SqliteRepositoryStore>());
+// Storage:Provider defaults to "sqlite" (unchanged behavior) until MapRepo.NativeStore v0.2 has been
+// through this repo's own fire-test suites end to end, not just the vendor's own tests — see
+// Migration/V2/BENCHMARK-RESULTS-V2.md for what's already been verified and what's still open
+// (the TypeScript structural-identity bug in particular). "native" opts in once ready to flip the
+// shipped default.
+var storageProvider = builder.Configuration["Storage:Provider"] ?? "sqlite";
+if (string.Equals(storageProvider, "native", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddSingleton(sp =>
+    {
+        var environment = sp.GetRequiredService<IHostEnvironment>();
+        var configuredRoot = builder.Configuration["Storage:NativeRoot"] ?? "data-native-v2";
+        var root = Path.IsPathRooted(configuredRoot) ? configuredRoot : Path.Combine(environment.ContentRootPath, configuredRoot);
+        var modeText = builder.Configuration["Storage:MemoryMode"];
+        var mode = string.IsNullOrWhiteSpace(modeText)
+            ? NativeMemoryMode.MemoryMapped
+            : Enum.TryParse<NativeMemoryMode>(modeText, ignoreCase: true, out var parsedMode) && Enum.IsDefined(parsedMode)
+                ? parsedMode
+                : throw new InvalidOperationException($"Storage:MemoryMode '{modeText}' is invalid. Use MemoryMapped or CompactManaged.");
+        return new NativeRepositoryStore(new NativeStoreOptions
+        {
+            RootDirectory = root,
+            MemoryMode = mode,
+            FlushToDisk = builder.Configuration.GetValue("Storage:FlushToDisk", true),
+            WriteThrough = builder.Configuration.GetValue("Storage:WriteThrough", true),
+            CleanupObsoleteFiles = builder.Configuration.GetValue("Storage:CleanupObsoleteFiles", true),
+            VerifySnapshotPackChecksumsOnOpen = builder.Configuration.GetValue("Storage:VerifyOnOpen", true),
+            MaxResidentRepositories = builder.Configuration.GetValue("Storage:MaxResidentRepositories", 2),
+            MaxResidentManagedBytes = builder.Configuration.GetValue<long>("Storage:MaxResidentManagedBytes", 256L * 1024 * 1024),
+            IdleRepositoryTimeout = TimeSpan.FromMinutes(builder.Configuration.GetValue("Storage:IdleRepositoryMinutes", 10)),
+            DecodedStringCacheBytes = builder.Configuration.GetValue<long>("Storage:DecodedStringCacheBytes", 16L * 1024 * 1024),
+            MaterializedRecordCacheEntries = builder.Configuration.GetValue("Storage:MaterializedRecordCacheEntries", 2048),
+            StrictIdentityValidation = true
+        });
+    });
+    builder.Services.AddSingleton<IRepositoryStore>(sp => sp.GetRequiredService<NativeRepositoryStore>());
+}
+else
+{
+    builder.Services.AddSingleton<SqliteRepositoryStore>();
+    builder.Services.AddSingleton<IRepositoryStore>(sp => sp.GetRequiredService<SqliteRepositoryStore>());
+}
 builder.Services.AddSingleton<RepositoryCatalog>();
 builder.Services.AddSingleton(sp =>
 {
