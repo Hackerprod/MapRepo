@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Channels;
 using Microsoft.AspNetCore.Http.Features;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using MapRepo.Core;
 using MapRepo.Modules.CSharp;
@@ -12,9 +11,9 @@ using MapRepo.NativeStore;
 using MapRepo.Server;
 
 // A Windows Service starts with its working directory in System32, not the install folder —
-// pin ContentRootPath to the executable's own folder only in that mode, so data-v4/ and wwwroot/
-// resolve correctly. `dotnet run` and the Scheduled Task launch (which sets "Start in") keep
-// relying on the current directory, unchanged from before.
+// pin ContentRootPath to the executable's own folder only in that mode, so data-native-v2/ and
+// wwwroot/ resolve correctly. `dotnet run` and the Scheduled Task launch (which sets "Start in")
+// keep relying on the current directory, unchanged from before.
 var runningAsService = OperatingSystem.IsWindows() && WindowsServiceHelpers.IsWindowsService();
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -28,48 +27,34 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
     options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
 });
-// Storage:Provider defaults to "sqlite" (unchanged behavior) until MapRepo.NativeStore v0.2 has been
-// through this repo's own fire-test suites end to end, not just the vendor's own tests — see
-// Migration/V2/BENCHMARK-RESULTS-V2.md for what's already been verified and what's still open
-// (the TypeScript structural-identity bug in particular). "native" opts in once ready to flip the
-// shipped default.
-var storageProvider = builder.Configuration["Storage:Provider"] ?? "sqlite";
-if (string.Equals(storageProvider, "native", StringComparison.OrdinalIgnoreCase))
+builder.Services.AddSingleton(sp =>
 {
-    builder.Services.AddSingleton(sp =>
+    var environment = sp.GetRequiredService<IHostEnvironment>();
+    var configuredRoot = builder.Configuration["Storage:NativeRoot"] ?? "data-native-v2";
+    var root = Path.IsPathRooted(configuredRoot) ? configuredRoot : Path.Combine(environment.ContentRootPath, configuredRoot);
+    var modeText = builder.Configuration["Storage:MemoryMode"];
+    var mode = string.IsNullOrWhiteSpace(modeText)
+        ? NativeMemoryMode.MemoryMapped
+        : Enum.TryParse<NativeMemoryMode>(modeText, ignoreCase: true, out var parsedMode) && Enum.IsDefined(parsedMode)
+            ? parsedMode
+            : throw new InvalidOperationException($"Storage:MemoryMode '{modeText}' is invalid. Use MemoryMapped or CompactManaged.");
+    return new NativeRepositoryStore(new NativeStoreOptions
     {
-        var environment = sp.GetRequiredService<IHostEnvironment>();
-        var configuredRoot = builder.Configuration["Storage:NativeRoot"] ?? "data-native-v2";
-        var root = Path.IsPathRooted(configuredRoot) ? configuredRoot : Path.Combine(environment.ContentRootPath, configuredRoot);
-        var modeText = builder.Configuration["Storage:MemoryMode"];
-        var mode = string.IsNullOrWhiteSpace(modeText)
-            ? NativeMemoryMode.MemoryMapped
-            : Enum.TryParse<NativeMemoryMode>(modeText, ignoreCase: true, out var parsedMode) && Enum.IsDefined(parsedMode)
-                ? parsedMode
-                : throw new InvalidOperationException($"Storage:MemoryMode '{modeText}' is invalid. Use MemoryMapped or CompactManaged.");
-        return new NativeRepositoryStore(new NativeStoreOptions
-        {
-            RootDirectory = root,
-            MemoryMode = mode,
-            FlushToDisk = builder.Configuration.GetValue("Storage:FlushToDisk", true),
-            WriteThrough = builder.Configuration.GetValue("Storage:WriteThrough", true),
-            CleanupObsoleteFiles = builder.Configuration.GetValue("Storage:CleanupObsoleteFiles", true),
-            VerifySnapshotPackChecksumsOnOpen = builder.Configuration.GetValue("Storage:VerifyOnOpen", true),
-            MaxResidentRepositories = builder.Configuration.GetValue("Storage:MaxResidentRepositories", 2),
-            MaxResidentManagedBytes = builder.Configuration.GetValue<long>("Storage:MaxResidentManagedBytes", 256L * 1024 * 1024),
-            IdleRepositoryTimeout = TimeSpan.FromMinutes(builder.Configuration.GetValue("Storage:IdleRepositoryMinutes", 10)),
-            DecodedStringCacheBytes = builder.Configuration.GetValue<long>("Storage:DecodedStringCacheBytes", 16L * 1024 * 1024),
-            MaterializedRecordCacheEntries = builder.Configuration.GetValue("Storage:MaterializedRecordCacheEntries", 2048),
-            StrictIdentityValidation = true
-        });
+        RootDirectory = root,
+        MemoryMode = mode,
+        FlushToDisk = builder.Configuration.GetValue("Storage:FlushToDisk", true),
+        WriteThrough = builder.Configuration.GetValue("Storage:WriteThrough", true),
+        CleanupObsoleteFiles = builder.Configuration.GetValue("Storage:CleanupObsoleteFiles", true),
+        VerifySnapshotPackChecksumsOnOpen = builder.Configuration.GetValue("Storage:VerifyOnOpen", true),
+        MaxResidentRepositories = builder.Configuration.GetValue("Storage:MaxResidentRepositories", 2),
+        MaxResidentManagedBytes = builder.Configuration.GetValue<long>("Storage:MaxResidentManagedBytes", 256L * 1024 * 1024),
+        IdleRepositoryTimeout = TimeSpan.FromMinutes(builder.Configuration.GetValue("Storage:IdleRepositoryMinutes", 10)),
+        DecodedStringCacheBytes = builder.Configuration.GetValue<long>("Storage:DecodedStringCacheBytes", 16L * 1024 * 1024),
+        MaterializedRecordCacheEntries = builder.Configuration.GetValue("Storage:MaterializedRecordCacheEntries", 2048),
+        StrictIdentityValidation = true
     });
-    builder.Services.AddSingleton<IRepositoryStore>(sp => sp.GetRequiredService<NativeRepositoryStore>());
-}
-else
-{
-    builder.Services.AddSingleton<SqliteRepositoryStore>();
-    builder.Services.AddSingleton<IRepositoryStore>(sp => sp.GetRequiredService<SqliteRepositoryStore>());
-}
+});
+builder.Services.AddSingleton<IRepositoryStore>(sp => sp.GetRequiredService<NativeRepositoryStore>());
 builder.Services.AddSingleton<RepositoryCatalog>();
 builder.Services.AddSingleton(sp =>
 {
@@ -115,7 +100,7 @@ app.MapGet("/api/repos", async (RepositorySessionManager manager, CancellationTo
 app.MapPost("/api/repos/open", async (RepositoryDefinition definition, bool? reindex, RepositorySessionManager manager, CancellationToken ct) =>
 {
     try { return Results.Ok(await manager.OpenAsync(definition, reindex ?? false, ct)); }
-    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException or InvalidOperationException or SqliteException)
+    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException or InvalidOperationException)
     { return Results.BadRequest(new { error = ex.Message }); }
 });
 
@@ -144,7 +129,6 @@ app.MapGet("/api/repos/{id}/status", async (string id, RepositorySessionManager 
         return Results.Ok(await dispatcher.GetStatusAsync(id, ct));
     }
     catch (KeyNotFoundException ex) { return Results.NotFound(new { error = ex.Message }); }
-    catch (SqliteException) { return Results.StatusCode(StatusCodes.Status503ServiceUnavailable); }
 });
 
 app.MapGet("/api/repos/{id}/overview", async (string id, bool? includeGenerated, IRepositoryStore store, CancellationToken ct) =>
@@ -209,7 +193,7 @@ app.MapPost("/mcp", async (HttpContext context, McpDispatcher dispatcher, Cancel
         return Results.Empty;
     }
     catch (JsonException ex) { return Results.Json(new { jsonrpc = "2.0", id = (object?)null, error = new { code = -32700, message = ex.Message } }, statusCode: 200); }
-    catch (Exception ex) when (ex is KeyNotFoundException or DirectoryNotFoundException or InvalidOperationException or SqliteException)
+    catch (Exception ex) when (ex is KeyNotFoundException or DirectoryNotFoundException or InvalidOperationException)
     { return Results.Json(new { jsonrpc = "2.0", id = (object?)null, error = new { code = -32000, message = ex.Message } }, statusCode: 200); }
 });
 

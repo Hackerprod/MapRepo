@@ -8,16 +8,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.10" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <!-- Per-repository indexes and local Node/typescript tooling are runtime data, not build
-         inputs — without these excludes, `dotnet publish` copies every live database (and any
-         registered repository's index) into the publish output. -->
-    <Content Remove="data-v4/**" />
-    <None Remove="data-v4/**" />
+         inputs — without these excludes, `dotnet publish` copies every registered repository's
+         index into the publish output. -->
     <Content Remove="data-native-v2/**" />
     <None Remove="data-native-v2/**" />
     <Content Remove="tools/node_modules/**" />

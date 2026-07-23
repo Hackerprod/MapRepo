@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.Data.Sqlite;
 using MapRepo.Core;
 
 namespace MapRepo.Server;
@@ -77,7 +76,7 @@ public sealed class McpDispatcher
             try { return await _manager.Get(id).StatusAsync(cancellationToken); }
             catch (KeyNotFoundException) { return await _store.StatusAsync(id, cancellationToken); }
         }
-        catch (SqliteException ex)
+        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
         {
             // Same enrichment as list_repositories' per-repo isolation: name the actual storage
             // directory so "disk I/O error" is actionable instead of a dead end.
@@ -270,7 +269,7 @@ public sealed class McpDispatcher
     }
 
     public static bool IsToolFailure(Exception ex) =>
-        ex is KeyNotFoundException or DirectoryNotFoundException or FileNotFoundException or InvalidOperationException or JsonException or SqliteException;
+        ex is KeyNotFoundException or DirectoryNotFoundException or FileNotFoundException or InvalidOperationException or JsonException or InvalidDataException or UnauthorizedAccessException;
 
     // Compact wire format for MCP responses: constant/derivable fields (repositoryId, moduleId,
     // language, confidence, edge ids, end columns) are omitted — they were ~45% of the JSON.

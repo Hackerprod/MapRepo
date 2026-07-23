@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using MapRepo.Core;
 
@@ -31,7 +30,7 @@ public sealed class RepositorySessionManager : IAsyncDisposable
         foreach (var definition in _catalog.All())
         {
             try { await OpenAsync(definition, reindex: false, cancellationToken); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException or InvalidOperationException or SqliteException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or DirectoryNotFoundException or InvalidOperationException or InvalidDataException)
             {
                 // A missing path or a corrupt database for one repository must not stop the server
                 // from restoring the rest; it stays cataloged and can be repaired/reindexed later.
@@ -74,12 +73,12 @@ public sealed class RepositorySessionManager : IAsyncDisposable
                     ? await session.StatusAsync(cancellationToken)
                     : await _store.StatusAsync(definition.Id, cancellationToken);
             }
-            catch (SqliteException ex)
+            catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
             {
-                // One repository's damaged database must not take down the whole list — every
+                // One repository's damaged store must not take down the whole list — every
                 // other repository is still perfectly queryable. Surface the failure as a diagnostic,
                 // naming the actual directory so a disk I/O error is diagnosable without spelunking
-                // for which of N repositories' data-v4 folder is the one actually broken.
+                // for which repository's storage directory is the one actually broken.
                 _logger.LogWarning(ex, "Status check failed for repository {RepositoryId}", definition.Id);
                 status = new RepositoryStatus(definition.Id, null, 0, 0, null, false, false,
                     [$"Status check failed: {ex.Message} (storage: {_store.StoragePath(definition.Id)})"]);
@@ -284,7 +283,7 @@ public sealed class RepositorySession : IAsyncDisposable
                 if (pending.Count == 0)
                 {
                     var stored = await _store.StatusAsync(_definition.Id, cancellationToken);
-                    var (incrementalReal, incrementalSummary) = SqliteRepositoryStore.SplitDiagnostics(incrementalDiagnostics);
+                    var (incrementalReal, incrementalSummary) = MapRepo.Core.RepositoryDiagnostics.Split(incrementalDiagnostics);
                     _lastStatus = stored with
                     {
                         WatcherActive = WatcherActive,

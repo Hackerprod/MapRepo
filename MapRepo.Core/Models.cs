@@ -45,7 +45,7 @@ public sealed record SymbolRecord(
     string ModuleId,
     /// <summary>Optional canonical identity string a module can derive independently of Id's hash
     /// (e.g. containing-type chain + kind + parameter shapes) — NativeStore persists it for stronger
-    /// duplicate diagnostics; null is fine for modules that don't compute one (SQLite ignores it).</summary>
+    /// duplicate diagnostics; null is fine for modules that don't compute one.</summary>
     string? StructuralIdentity = null);
 
 public sealed record RelationshipRecord(
