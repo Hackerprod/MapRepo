@@ -22,7 +22,7 @@ public static class McpToolCatalog
             ArrayProperty("excludedPaths", "Extra path substrings (case-insensitive) to skip during indexing and watching, beyond the built-in .git/node_modules/bin/obj/dist/build/coverage list — e.g. a project-specific build-verification scratch folder.", "string"),
             BooleanProperty("allowExternalSymbols", "C# only: when the .sln references a project outside rootPath (a sibling repo via ProjectReference), also index its symbols/edges. Default false keeps every repository's index isolated to its own files.")
         ], ["rootPath"])),
-        new("list_repositories", "List every registered repository with a compact status (id, rootPath, symbols, relationships, indexing, diagnosticCount). Call this first to discover repositoryId values.", Schema([
+        new("list_repositories", "List every registered repository with a compact status (id, rootPath, symbols, relationships, indexing, diagnosticCount, textualEvidence). Call this first to discover repositoryId values.", Schema([
             BooleanProperty("includeDiagnostics", "Return the full definition and diagnostics text per repository instead of the compact default. Expensive on repositories with many MSBuild/analysis warnings.")
         ], [])),
         new("repository_status", "Return index generation, counts, diagnostics and watcher state. diagnostics is actual problems (MSBuild/analysis errors); routine per-module index stats (file/symbol/edge counts) come back separately in indexSummary, not mixed in.", RepoSchema()),
@@ -40,13 +40,13 @@ public static class McpToolCatalog
             StringProperty("repositoryId", "Repository id."),
             BooleanProperty("includeGenerated", "Include tool-generated files (designer/.g.cs/.pb.cs/AssemblyInfo/obj) in topFiles and hubs. Default false keeps the orientation map focused on hand-written code.")
         ], ["repositoryId"])),
-        new("search_symbols", "Find symbols with exact source file and line evidence. Supports kind and path filters.", Schema([
+        new("search_symbols", "Find symbols with exact source file and line evidence. Supports kind and path filters. Only searches declared symbols by default — pass includeTextual:true to also search string-literal text (config names, error messages, etc.), which requires the repository to have been indexed with includeTextualEvidence:true; a repository indexed without it returns an explicit diagnostic telling you to fall back to a plain-text tool (grep/rg) instead of silently coming back empty.", Schema([
             StringProperty("repositoryId", "Repository id."),
             StringProperty("query", "Symbol name or source text to find."),
             IntegerProperty("limit", "Maximum result count."),
             StringProperty("kind", "Optional symbol kind filter, e.g. Method, NamedType, class, property."),
             StringProperty("pathContains", "Optional substring the file path must contain."),
-            BooleanProperty("includeTextual", "Include textual-evidence matches from string literals (default false)."),
+            BooleanProperty("includeTextual", "Also search string-literal text, not just declared symbols (default false). Only finds anything if this repository was indexed with includeTextualEvidence:true (see open_repository) — otherwise use grep/rg for literal text."),
             BooleanProperty("includeRelationships", "Attach up to 24 edges per result (default false; use get_symbol/find_* instead).")
         ], ["repositoryId", "query"])),
         new("get_symbol", "Full detail for one symbol: record, incoming and outgoing edges, and neighbor symbols", Schema([

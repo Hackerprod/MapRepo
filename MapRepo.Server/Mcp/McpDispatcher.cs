@@ -149,12 +149,19 @@ public sealed class McpDispatcher
                 return summaries.Select(s => new
                 {
                     s.Definition.Id, s.Definition.RootPath, s.Status.Symbols, s.Status.Relationships,
-                    s.Status.Indexing, s.Status.WatcherActive, diagnosticCount = s.Status.Diagnostics.Count
+                    s.Status.Indexing, s.Status.WatcherActive, diagnosticCount = s.Status.Diagnostics.Count,
+                    textualEvidence = s.Definition.IncludeTextualEvidence
                 }).ToArray();
             case "repository_status":
                 var statusId = Required("repositoryId");
-                if (_manager.Definition(statusId) is null) throw new KeyNotFoundException($"Repository '{statusId}' is not registered");
-                return await GetStatusAsync(statusId, ct);
+                var statusDefinition = _manager.Definition(statusId) ?? throw new KeyNotFoundException($"Repository '{statusId}' is not registered");
+                var repoStatus = await GetStatusAsync(statusId, ct);
+                return new
+                {
+                    repoStatus.RepositoryId, repoStatus.Generation, repoStatus.Symbols, repoStatus.Relationships,
+                    repoStatus.LastIndexedAt, repoStatus.WatcherActive, repoStatus.Indexing, repoStatus.Diagnostics,
+                    repoStatus.IndexSummary, textualEvidence = statusDefinition.IncludeTextualEvidence
+                };
             case "reindex_repository":
                 var reindexId = Required("repositoryId");
                 var definition = _manager.Definition(reindexId) ?? throw new KeyNotFoundException($"Repository '{reindexId}' is not registered");
