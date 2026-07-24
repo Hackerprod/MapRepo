@@ -226,7 +226,7 @@ public sealed class CppSemanticModule : IRepositoryLanguageModule, IIncrementalA
             {
                 args.AddRange(AdaptCompileCommandArgs(command, path));
                 args.Add("-Wno-everything");
-                return ParseWithDiagnostics(index, path, args, diagnostics);
+                return ParseWithDiagnostics(repo, index, path, args, diagnostics);
             }
 
             args.Add("--language=" + (path.EndsWith(".c", StringComparison.OrdinalIgnoreCase) ? "c" : "c++"));
@@ -237,7 +237,7 @@ public sealed class CppSemanticModule : IRepositoryLanguageModule, IIncrementalA
             foreach (var dir in FindIncludeDirs(repo.RootPath))
                 args.Add("-I" + dir);
 
-            return ParseWithDiagnostics(index, path, args, diagnostics);
+            return ParseWithDiagnostics(repo, index, path, args, diagnostics);
         }
         catch (Exception ex)
         {
@@ -246,7 +246,7 @@ public sealed class CppSemanticModule : IRepositoryLanguageModule, IIncrementalA
         }
     }
 
-    private static unsafe CXTranslationUnit ParseWithDiagnostics(CXIndex index, string path, List<string> args, List<string> diagnostics)
+    private static unsafe CXTranslationUnit ParseWithDiagnostics(RepositoryDefinition repo, CXIndex index, string path, List<string> args, List<string> diagnostics)
     {
         // DetailedPreprocessingRecord is required for macro-definition cursors to appear at all —
         // without it, CXCursor_MacroDefinition (mapped in GetSymbolKind) never fires during the
@@ -257,7 +257,11 @@ public sealed class CppSemanticModule : IRepositoryLanguageModule, IIncrementalA
 
         // -Wno-everything silences Clang's own warnings, but errors (most commonly an unresolved
         // #include) still land here — surfaced explicitly instead of the translation unit quietly
-        // carrying degraded/incomplete semantic information with no diagnostic to show for it.
+        // carrying degraded/incomplete semantic information with no diagnostic to show for it. Same
+        // exclusion policy as symbols: a diagnostic whose own location is under an excludedPaths
+        // entry (a vendored SDK's sample code, say) is exactly as uninteresting as that SDK's symbols
+        // already are — surfacing it anyway would mean excluding a noisy vendor folder never actually
+        // silences the noise it was meant to silence.
         var errorCount = 0;
         var totalErrors = 0;
         var numDiagnostics = clang.getNumDiagnostics(tu);
@@ -268,6 +272,8 @@ public sealed class CppSemanticModule : IRepositoryLanguageModule, IIncrementalA
             {
                 var severity = clang.getDiagnosticSeverity(diagnostic);
                 if (severity is not (CXDiagnosticSeverity.CXDiagnostic_Error or CXDiagnosticSeverity.CXDiagnostic_Fatal)) continue;
+                var diagnosticFile = GetLocationFilePath(clang.getDiagnosticLocation(diagnostic));
+                if (diagnosticFile is not null && !IsAllowedFile(repo, diagnosticFile)) continue;
                 totalErrors++;
                 if (errorCount >= 5) continue;
                 var formatted = clang.formatDiagnostic(diagnostic, (uint)CXDiagnosticDisplayOptions.CXDiagnostic_DisplaySourceLocation).ToString();
@@ -280,6 +286,21 @@ public sealed class CppSemanticModule : IRepositoryLanguageModule, IIncrementalA
             diagnostics.Add($"Clang: {Path.GetFileName(path)} has {totalErrors} error/fatal diagnostic(s) total (showing first {errorCount}).");
         return tu;
     }
+
+    private static unsafe string? GetLocationFilePath(CXSourceLocation location)
+    {
+        void* filePtr = null;
+        uint line = 0;
+        clang.getFileLocation(location, &filePtr, &line, null, null);
+        if (line == 0 || filePtr == null) return null;
+        var file = new CXFile { Handle = (IntPtr)filePtr };
+        var name = clang.getFileName(file).ToString();
+        return string.IsNullOrEmpty(name) ? null : Path.GetFullPath(name);
+    }
+
+    private static bool IsAllowedFile(RepositoryDefinition repo, string path) =>
+        (repo.AllowExternalSymbols || IsUnderRoot(repo.RootPath, path)) &&
+        !PathExclusions.IsExcluded(path, repo.ExcludedPaths);
 
     private static unsafe void AnalyzeTu(RepositoryDefinition repo, CXTranslationUnit tu, string file,
         List<SymbolRecord> symbols, List<RelationshipRecord> relationships,
@@ -342,17 +363,15 @@ public sealed class CppSemanticModule : IRepositoryLanguageModule, IIncrementalA
                 var kind = cursor.Kind;
                 if (kind == CXCursor_InclusionDirective) return CXChildVisit_Continue;
 
-                // A cursor from an included system/third-party header is never interesting by
-                // default, and neither is anything nested under it (a syntactic child is always in
-                // the same or a deeper-included file, never back in the repo) — pruning here instead
-                // of just filtering it out of ConvertSymbol avoids walking the entire subtree of
-                // every transitively-#include'd standard-library/SDK header for nothing.
-                if (!_repo.AllowExternalSymbols)
-                {
-                    var cursorFile = GetCursorFilePath(cursor);
-                    if (cursorFile is not null && !IsUnderRoot(_repo.RootPath, cursorFile))
-                        return CXChildVisit_Continue;
-                }
+                // A cursor from an included system/third-party header — or from a path the repo
+                // explicitly excluded (e.g. a vendored SDK's sample code, via excludedPaths) — is
+                // never interesting by default, and neither is anything nested under it (a syntactic
+                // child is always in the same or a deeper-included file, never back in the repo).
+                // Pruning here instead of just filtering it out of ConvertSymbol avoids walking the
+                // entire subtree of every transitively-#include'd header for nothing.
+                var cursorFile = GetCursorFilePath(cursor);
+                if (cursorFile is not null && !AllowedFile(cursorFile))
+                    return CXChildVisit_Continue;
 
                 // Call/construct and base-specifier edges are detected independently of whether the
                 // triggering cursor itself converts to a symbol — it never does (CallExpr and
@@ -430,8 +449,7 @@ public sealed class CppSemanticModule : IRepositoryLanguageModule, IIncrementalA
                 if (string.IsNullOrWhiteSpace(spelling)) return null;
 
                 var sourcePath = GetCursorFilePath(cursor);
-                if (sourcePath is null) return null;
-                if (!_repo.AllowExternalSymbols && !IsUnderRoot(_repo.RootPath, sourcePath)) return null;
+                if (sourcePath is null || !AllowedFile(sourcePath)) return null;
                 var relativeFile = Relative(_repo.RootPath, sourcePath);
 
                 uint line = 0, column = 0;
@@ -577,12 +595,14 @@ public sealed class CppSemanticModule : IRepositoryLanguageModule, IIncrementalA
         {
             if (cursor == default || cursor.IsNull) return null;
             var path = GetCursorFilePath(cursor);
-            if (path is null || (!_repo.AllowExternalSymbols && !IsUnderRoot(_repo.RootPath, path))) return null;
+            if (path is null || !AllowedFile(path)) return null;
             uint line = 0, column = 0;
             clang.getFileLocation(cursor.Location, null, &line, &column, null);
             if (line == 0) return null;
             return (Relative(_repo.RootPath, path), (int)line, (int)column);
         }
+
+        private bool AllowedFile(string path) => IsAllowedFile(_repo, path);
     }
 
     private static IEnumerable<string> FindIncludeDirs(string root)

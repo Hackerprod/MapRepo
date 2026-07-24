@@ -219,7 +219,7 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
             var symbol = model.GetDeclaredSymbol(node, request.CancellationToken);
             if (symbol is null || symbol.IsImplicitlyDeclared) continue;
             sourceSymbols[node] = symbol;
-            AddSymbol(symbol, request.Repository.Id, project.Name, file, request.Repository.RootPath, request.Repository.AllowExternalSymbols, tree, symbols, seenSymbols);
+            AddSymbol(symbol, request.Repository.Id, project.Name, file, request.Repository.RootPath, request.Repository.AllowExternalSymbols, tree, node, symbols, seenSymbols);
             var parent = model.GetEnclosingSymbol(node.SpanStart, request.CancellationToken);
             if (parent is not null && parent.Kind != SymbolKind.Namespace)
                 AddRelationship(parent, symbol, "contains", file, node.SpanStart, tree, request, relationships, seenRelationships);
@@ -298,17 +298,23 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
         }
     }
 
+    // Deliberately uses the declaration node's own location — not symbol.Locations.FirstOrDefault() —
+    // because for a partial class/method, Locations spans every partial declaration across every
+    // file it appears in, in an order Roslyn doesn't guarantee matches "the document currently being
+    // analyzed." Incremental re-analysis of file A could then attribute a symbol to file B's
+    // location (wherever Roslyn's ordering happened to put first), which is both wrong (B wasn't
+    // re-parsed, so a stale location) and fatal: NativeStore validates that every symbol in an
+    // incremental delta belongs to the declared changed-file set, so a mislocated symbol threw
+    // InvalidDataException on every retry until the process crashed. node's own location is
+    // unambiguous — it came from this exact document's syntax root — and as a side effect gives each
+    // partial declaration site its own SymbolRecord instead of only the arbitrarily-"first" one being
+    // visible to file_outline/search.
     private static void AddSymbol(ISymbol symbol, string repositoryId, string project, string file, string rootPath,
-        bool allowExternal, SyntaxTree tree, List<SymbolRecord> output, HashSet<string> seen)
+        bool allowExternal, SyntaxTree tree, SyntaxNode node, List<SymbolRecord> output, HashSet<string> seen)
     {
-        var location = symbol.Locations.FirstOrDefault(l => l.IsInSource);
-        if (location is null) return;
-        var sourceTree = location.SourceTree ?? tree;
-        if (!allowExternal && !string.IsNullOrWhiteSpace(sourceTree.FilePath) && !IsUnderRoot(rootPath, sourceTree.FilePath)) return;
-        if (!TryGetLineSpan(sourceTree, location.SourceSpan, out var span)) return;
-        var symbolFile = !string.IsNullOrWhiteSpace(sourceTree.FilePath)
-            ? RelativePath(rootPath, sourceTree.FilePath)
-            : file;
+        if (!allowExternal && !string.IsNullOrWhiteSpace(tree.FilePath) && !IsUnderRoot(rootPath, tree.FilePath)) return;
+        if (!TryGetLineSpan(tree, node.Span, out var span)) return;
+        var symbolFile = !string.IsNullOrWhiteSpace(tree.FilePath) ? RelativePath(rootPath, tree.FilePath) : file;
         var id = SymbolId(symbol, symbolFile);
         if (!seen.Add(id)) return;
         output.Add(new SymbolRecord(id, repositoryId, project, symbolFile, symbol.Name,
@@ -318,11 +324,21 @@ public sealed class CSharpRoslynModule : IRepositoryLanguageModule, IIncremental
             symbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat), "csharp", "csharp-roslyn"));
     }
 
+    // Prefers a location in the document currently being analyzed over Locations' arbitrary first
+    // entry: for a partial type/method, that's the same declaration site AddSymbol will use (or has
+    // used) to compute that same symbol's own id, so the edge's endpoint id actually matches a stored
+    // SymbolRecord instead of silently pointing at an id nothing was ever recorded under. Falls back
+    // to Locations.FirstOrDefault() only for a genuinely cross-file reference, where the symbol isn't
+    // declared anywhere in this document at all.
+    private static Location? LocationInDocument(ISymbol symbol, SyntaxTree tree) =>
+        symbol.Locations.FirstOrDefault(l => l.IsInSource && l.SourceTree == tree)
+        ?? symbol.Locations.FirstOrDefault(l => l.IsInSource);
+
     private static void AddRelationship(ISymbol source, ISymbol target, string kind, string file, int position,
         SyntaxTree tree, AnalysisRequest request, List<RelationshipRecord> output, HashSet<string> seen)
     {
-        var sourceLocation = source.Locations.FirstOrDefault(l => l.IsInSource);
-        var targetLocation = target.Locations.FirstOrDefault(l => l.IsInSource);
+        var sourceLocation = LocationInDocument(source, tree);
+        var targetLocation = LocationInDocument(target, tree);
         if (sourceLocation is null || targetLocation is null) return;
         var sourceTree = sourceLocation.SourceTree;
         var targetTree = targetLocation.SourceTree;
