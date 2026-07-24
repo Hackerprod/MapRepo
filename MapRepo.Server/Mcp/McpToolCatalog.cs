@@ -11,7 +11,7 @@ public static class McpToolCatalog
 {
     public static IReadOnlyList<McpToolDefinition> All { get; } =
     [
-        new("open_repository", "Register/open a repository, index it and start its live file watcher. Reuses the existing index unless reindex=true.", Schema([
+        new("open_repository", "Register/open a repository, index it and start its live file watcher. Reuses the existing index unless reindex=true. Re-opening an already-registered repository is a merge, not a replace: any optional field you omit keeps its current cataloged value (e.g. excludedPaths set earlier via exclude_path survives a plain {id, rootPath} re-open) — only fields you actually pass override what's on record.", Schema([
             StringProperty("rootPath", "Absolute repository root path."),
             StringProperty("id", "Optional stable repository id (defaults to the folder name)."),
             StringProperty("solutionPath", "Optional .sln/.slnx/.csproj path used by the C# module."),

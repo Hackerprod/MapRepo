@@ -97,12 +97,25 @@ public sealed class McpDispatcher
         switch (tool)
         {
             case "open_repository":
-                var id = Optional("id");
                 var root = Required("rootPath");
-                var solution = Optional("solutionPath");
-                var modules = StringArray("enabledModules");
-                var excludedPaths = StringArray("excludedPaths");
-                return await _manager.OpenAsync(new RepositoryDefinition(id ?? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)), root, solution, modules, OptionalBool("includeTextualEvidence", false), Optional("tsEngine"), excludedPaths, OptionalBool("allowExternalSymbols", false)), OptionalBool("reindex", false), ct);
+                var id = Optional("id") ?? Path.GetFileName(root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+                // Re-opening an already-registered repository (e.g. just to check status, or start
+                // the watcher again) must not silently reset settings — exclude_path, enabledModules,
+                // tsEngine, includeTextualEvidence, allowExternalSymbols — back to their argument
+                // defaults just because this particular call didn't repeat them. Confirmed as a real
+                // bug in the field: exclude_path's exclusion kept vanishing because every later
+                // open_repository call (including this project's own fire-test suite's "open repo no
+                // reindex" check, which only ever passes id/rootPath) unconditionally overwrote the
+                // catalog entry with a freshly-defaulted definition. Only a field the caller actually
+                // supplied in this call overrides what's already on record.
+                var existing = _manager.Definition(id);
+                var solution = args.TryGetProperty("solutionPath", out _) ? Optional("solutionPath") : existing?.SolutionPath;
+                var modules = args.TryGetProperty("enabledModules", out _) ? StringArray("enabledModules") : existing?.EnabledModules;
+                var includeTextualEvidence = args.TryGetProperty("includeTextualEvidence", out _) ? OptionalBool("includeTextualEvidence", false) : existing?.IncludeTextualEvidence ?? false;
+                var tsEngine = args.TryGetProperty("tsEngine", out _) ? Optional("tsEngine") : existing?.TsEngine;
+                var excludedPaths = args.TryGetProperty("excludedPaths", out _) ? StringArray("excludedPaths") : existing?.ExcludedPaths;
+                var allowExternalSymbols = args.TryGetProperty("allowExternalSymbols", out _) ? OptionalBool("allowExternalSymbols", false) : existing?.AllowExternalSymbols ?? false;
+                return await _manager.OpenAsync(new RepositoryDefinition(id, root, solution, modules, includeTextualEvidence, tsEngine, excludedPaths, allowExternalSymbols), OptionalBool("reindex", false), ct);
             case "exclude_path":
                 var (updatedDefinition, removed) = await _manager.ExcludePathAsync(Required("repositoryId"), Required("path"), ct);
                 return new { updatedDefinition.Id, updatedDefinition.ExcludedPaths, symbolsRemoved = removed };

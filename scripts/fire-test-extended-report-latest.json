@@ -1,7 +1,7 @@
 ﻿{
     "baseUrl":  "http://127.0.0.1:5087",
     "repositoryId":  "skynet-steam-emulator",
-    "generatedAt":  "2026-07-23T19:34:54.7228592-07:00",
+    "generatedAt":  "2026-07-23T20:04:27.5934531-07:00",
     "total":  38,
     "failed":  0,
     "critical":  0,
@@ -12,7 +12,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  154.5,
+                       "ms":  134.8,
                        "details":  "status=ok",
                        "data":  null
                    },
@@ -21,7 +21,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  44.8,
+                       "ms":  11.3,
                        "details":  "service=map-repo-server",
                        "data":  null
                    },
@@ -30,7 +30,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  48.5,
+                       "ms":  38.5,
                        "details":  "protocol=2024-11-05",
                        "data":  null
                    },
@@ -39,7 +39,7 @@
                        "category":  "contract",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  35.7,
+                       "ms":  6.3,
                        "details":  "tools=19, bad=0, missing=",
                        "data":  {
                                     "names":  [
@@ -70,14 +70,14 @@
                        "category":  "lifecycle",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  33.9,
-                       "details":  "repo=skynet-steam-emulator, ms=33.9, watcher=True",
+                       "ms":  22.5,
+                       "details":  "repo=skynet-steam-emulator, ms=22.5, watcher=True",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260724023339953",
-                                    "symbols":  46947,
-                                    "relationships":  85229,
-                                    "lastIndexedAt":  "2026-07-24T02:33:39.9533752+00:00",
+                                    "generation":  "20260724025856784",
+                                    "symbols":  46954,
+                                    "relationships":  85260,
+                                    "lastIndexedAt":  "2026-07-24T02:58:56.785+00:00",
                                     "watcherActive":  true,
                                     "indexing":  false,
                                     "diagnostics":  [
@@ -93,14 +93,14 @@
                        "category":  "lifecycle",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  44,
-                       "details":  "symbols=46947, edges=85229, diagnostics=0",
+                       "ms":  4.3,
+                       "details":  "symbols=46954, edges=85260, diagnostics=0",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260724023339953",
-                                    "symbols":  46947,
-                                    "relationships":  85229,
-                                    "lastIndexedAt":  "2026-07-24T02:33:39.9533752+00:00",
+                                    "generation":  "20260724025856784",
+                                    "symbols":  46954,
+                                    "relationships":  85260,
+                                    "lastIndexedAt":  "2026-07-24T02:58:56.785+00:00",
                                     "watcherActive":  true,
                                     "indexing":  false,
                                     "diagnostics":  [
@@ -117,8 +117,8 @@
                        "category":  "tokens",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  325.9,
-                       "details":  "repos=6, bytes=1219, ms=325.9",
+                       "ms":  230.1,
+                       "details":  "repos=6, bytes=1219, ms=230.1",
                        "data":  null
                    },
                    {
@@ -126,17 +126,17 @@
                        "category":  "overview",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  30,
-                       "details":  "symbols=46947, ms=30, external=False",
+                       "ms":  6.9,
+                       "details":  "symbols=46954, ms=6.9, external=False",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260724023339953",
-                                    "symbols":  46947,
-                                    "relationships":  85229,
+                                    "generation":  "20260724025856784",
+                                    "symbols":  46954,
+                                    "relationships":  85260,
                                     "kinds":  [
                                                   {
                                                       "key":  "Method",
-                                                      "count":  15927
+                                                      "count":  15929
                                                   },
                                                   {
                                                       "key":  "property",
@@ -144,7 +144,7 @@
                                                   },
                                                   {
                                                       "key":  "Property",
-                                                      "count":  9070
+                                                      "count":  9073
                                                   },
                                                   {
                                                       "key":  "Field",
@@ -152,7 +152,7 @@
                                                   },
                                                   {
                                                       "key":  "NamedType",
-                                                      "count":  2799
+                                                      "count":  2801
                                                   },
                                                   {
                                                       "key":  "interface",
@@ -190,7 +190,7 @@
                                     "languages":  [
                                                       {
                                                           "key":  "csharp",
-                                                          "count":  33053
+                                                          "count":  33060
                                                       },
                                                       {
                                                           "key":  "typescript",
@@ -204,7 +204,7 @@
                                     "projects":  [
                                                      {
                                                          "key":  "SKYNET server",
-                                                         "count":  33053
+                                                         "count":  33060
                                                      },
                                                      {
                                                          "key":  "(none)",
@@ -214,19 +214,19 @@
                                     "edgeKinds":  [
                                                       {
                                                           "key":  "contains",
-                                                          "count":  46678
+                                                          "count":  46683
                                                       },
                                                       {
                                                           "key":  "references",
-                                                          "count":  33497
+                                                          "count":  33514
                                                       },
                                                       {
                                                           "key":  "calls",
-                                                          "count":  4598
+                                                          "count":  4605
                                                       },
                                                       {
                                                           "key":  "constructs",
-                                                          "count":  376
+                                                          "count":  378
                                                       },
                                                       {
                                                           "key":  "imports",
@@ -244,7 +244,7 @@
                                                      },
                                                      {
                                                          "key":  "SKYNET server/Models/SteamApiModels.cs",
-                                                         "count":  490
+                                                         "count":  495
                                                      },
                                                      {
                                                          "key":  "SKYNET server/Services/DotaStatsStore.cs",
@@ -600,7 +600,7 @@
                        "category":  "isolation",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  42.5,
+                       "ms":  7.2,
                        "details":  "parentRelativeFiles=0",
                        "data":  [
 
@@ -611,7 +611,7 @@
                        "category":  "isolation",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  183.6,
+                       "ms":  77.6,
                        "details":  "absoluteFiles=0",
                        "data":  [
 
@@ -622,7 +622,7 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  33.7,
+                       "ms":  6.4,
                        "details":  "count=2, lines=8,19",
                        "data":  [
                                     {
@@ -660,7 +660,7 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  42,
+                       "ms":  5.2,
                        "details":  "file=SKYNET server/Certificate/NetworkingCertManager.cs, line=62",
                        "data":  {
                                     "symbol":  {
@@ -681,7 +681,7 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  36,
+                       "ms":  5.4,
                        "details":  "count=1",
                        "data":  [
                                     {
@@ -704,7 +704,7 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  39.4,
+                       "ms":  8.4,
                        "details":  "count=1",
                        "data":  [
                                     {
@@ -728,7 +728,7 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  27.3,
+                       "ms":  4.4,
                        "details":  "file=SKYNET server/GC/570/modules/Guilds.ts, line=117",
                        "data":  {
                                     "symbol":  {
@@ -749,7 +749,7 @@
                        "category":  "accuracy",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  26.1,
+                       "ms":  5,
                        "details":  "file=SKYNET server/GC/570/generated/dota.ts, line=21057",
                        "data":  {
                                     "symbol":  {
@@ -769,8 +769,8 @@
                        "category":  "performance",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  29.5,
-                       "details":  "count=0, ms=29.5",
+                       "ms":  4.6,
+                       "details":  "count=0, ms=4.6",
                        "data":  null
                    },
                    {
@@ -778,7 +778,7 @@
                        "category":  "filters",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  31.5,
+                       "ms":  5.2,
                        "details":  "count=2, bad=0",
                        "data":  null
                    },
@@ -787,7 +787,7 @@
                        "category":  "filters",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  34,
+                       "ms":  5,
                        "details":  "count=2, bad=0",
                        "data":  null
                    },
@@ -796,7 +796,7 @@
                        "category":  "contract",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  32.3,
+                       "ms":  5,
                        "details":  "hasRelationships=True",
                        "data":  {
                                     "symbol":  {
@@ -848,7 +848,7 @@
                        "category":  "contract",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  41.9,
+                       "ms":  11.4,
                        "details":  "name=CreateDbContext",
                        "data":  {
                                     "symbol":  {
@@ -925,7 +925,7 @@
                        "category":  "source",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  29.9,
+                       "ms":  3.5,
                        "details":  "lines=6,8,17,19",
                        "data":  [
                                     {
@@ -973,7 +973,7 @@
                        "category":  "source",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  31.8,
+                       "ms":  4.5,
                        "details":  "start=8, end=14, truncated=False",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
@@ -990,7 +990,7 @@
                        "category":  "source",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  105.9,
+                       "ms":  84.8,
                        "details":  "lineCount=400, truncated=True",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
@@ -1007,7 +1007,7 @@
                        "category":  "errors",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  31.1,
+                       "ms":  3.6,
                        "details":  "isError=True, text=Path escapes the repository root",
                        "data":  null
                    },
@@ -1016,7 +1016,7 @@
                        "category":  "errors",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  2.5,
+                       "ms":  2,
                        "details":  "isError=True, text=startLine (30) is greater than endLine (1); pass clamp=true to auto-correct instead of erroring",
                        "data":  null
                    },
@@ -1025,7 +1025,7 @@
                        "category":  "errors",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  5,
+                       "ms":  1.8,
                        "details":  "isError=True, text=File not found: does/not/exist.cs",
                        "data":  null
                    },
@@ -1034,11 +1034,11 @@
                        "category":  "graph",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  40.3,
+                       "ms":  8.4,
                        "details":  "callableCallers=1",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260724023339953",
+                                    "generation":  "20260724025856784",
                                     "nodes":  [
                                                   {
                                                       "id":  "ed6188c666846d0e099bfcbc",
@@ -1079,11 +1079,11 @@
                        "category":  "graph",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  36.5,
+                       "ms":  3.4,
                        "details":  "constructEdges=1",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260724023339953",
+                                    "generation":  "20260724025856784",
                                     "nodes":  [
                                                   {
                                                       "id":  "1fc23afac5121e1bf6166c15",
@@ -1126,11 +1126,11 @@
                        "category":  "graph",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  52.8,
+                       "ms":  5.4,
                        "details":  "edges=1, bad=0",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260724023339953",
+                                    "generation":  "20260724025856784",
                                     "nodes":  [
                                                   {
                                                       "id":  "ed6188c666846d0e099bfcbc",
@@ -1171,11 +1171,11 @@
                        "category":  "graph",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  46.5,
+                       "ms":  7.4,
                        "details":  "references=1",
                        "data":  {
                                     "repositoryId":  "skynet-steam-emulator",
-                                    "generation":  "20260724023339953",
+                                    "generation":  "20260724025856784",
                                     "nodes":  [
                                                   {
                                                       "id":  "eef93963be6d767343bcaa94",
@@ -1216,7 +1216,7 @@
                        "category":  "batch",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  67.2,
+                       "ms":  4.8,
                        "details":  "results=3, ok=2, failed=1, firstTruncated=False",
                        "data":  {
                                     "results":  [
@@ -1283,7 +1283,7 @@
                        "category":  "tokens",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  199,
+                       "ms":  139.4,
                        "details":  "mcpCount=0, rgCount=21, diagnostic=True",
                        "data":  {
                                     "mcp":  {
@@ -1301,7 +1301,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  50.4,
+                       "ms":  4.8,
                        "details":  "code=-32700, message=\u0027b\u0027 is an invalid start of a property name. Expected a \u0027\"\u0027. LineNumber: 0 | BytePositionInLine: 1.",
                        "data":  null
                    },
@@ -1310,7 +1310,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  31.2,
+                       "ms":  3.2,
                        "details":  "code=-32601, message=Method not found: no/such/method",
                        "data":  null
                    },
@@ -1319,7 +1319,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  2223.3,
+                       "ms":  2111.5,
                        "details":  "sse=True, session=True",
                        "data":  null
                    },
@@ -1328,7 +1328,7 @@
                        "category":  "transport",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  69.9,
+                       "ms":  48.2,
                        "details":  "status=400",
                        "data":  null
                    },
@@ -1337,7 +1337,7 @@
                        "category":  "tokens",
                        "severity":  "none",
                        "passed":  true,
-                       "ms":  38.9,
+                       "ms":  12.4,
                        "details":  "bytes=1466",
                        "data":  {
                                     "items":  [
